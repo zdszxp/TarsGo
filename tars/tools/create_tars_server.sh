@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # check params
 if [ $# -lt 3 ]
@@ -74,10 +74,19 @@ else
         sed  -i "s/_SERVANT_/$SERVANT/g" $FILE
     done
 
+    OS_NAME=$(cat /etc/os-release | grep '^NAME=' | sed 's/NAME="//' | sed 's/ .*$//')
+    
     for RENAMEFILE in `ls `
     do
-        rename "Server" "$SERVER" $RENAMEFILE
-        rename "Servant" "$SERVANT" $RENAMEFILE
+        if [ "$OS_NAME" != "CentOS" ];
+        then
+            #ubuntu perl rename version
+            rename "s/Server/$SERVER/" $RENAMEFILE
+            rename "s/Servant/$SERVANT/" $RENAMEFILE
+        else
+            rename "Server" "$SERVER" $RENAMEFILE
+            rename "Servant" "$SERVANT" $RENAMEFILE
+        fi
     done
 fi
 
