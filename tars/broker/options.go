@@ -4,8 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 
-	"github.com/micro/go-micro/codec"
-	"github.com/micro/go-micro/registry"
+	"github.com/TarsCloud/TarsGo/tars/codec"
+	//"github.com/TarsCloud/TarsGo/tars/registry"
 )
 
 type Options struct {
@@ -45,7 +45,7 @@ type PublishOption func(*PublishOptions)
 type SubscribeOption func(*SubscribeOptions)
 
 var (
-	registryKey = "github.com/micro/go-micro/registry"
+	registryKey = "github.com/TarsCloud/TarsGo/tars/registry"
 )
 
 func NewSubscribeOptions(opts ...SubscribeOption) SubscribeOptions {
@@ -90,11 +90,11 @@ func Queue(name string) SubscribeOption {
 	}
 }
 
-func Registry(r registry.Registry) Option {
-	return func(o *Options) {
-		o.Context = context.WithValue(o.Context, registryKey, r)
-	}
-}
+// func Registry(r registry.Registry) Option {
+// 	return func(o *Options) {
+// 		o.Context = context.WithValue(o.Context, registryKey, r)
+// 	}
+// }
 
 // Secure communication with the broker
 func Secure(b bool) Option {

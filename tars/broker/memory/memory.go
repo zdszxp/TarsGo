@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/micro/go-micro/broker"
+	"github.com/TarsCloud/TarsGo/tars/broker"
 )
 
 type memoryBroker struct {

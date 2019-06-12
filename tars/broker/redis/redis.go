@@ -6,16 +6,17 @@ import (
 	"errors"
 	"strings"
 	"time"
+	"log"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/micro/go-micro/broker"
-	"github.com/micro/go-micro/cmd"
-	"github.com/micro/go-micro/codec"
-	"github.com/micro/go-micro/codec/json"
+	"github.com/TarsCloud/TarsGo/tars/broker"
+	//"github.com/TarsCloud/TarsGo/tars/cmd"
+	"github.com/TarsCloud/TarsGo/tars/codec"
+	"github.com/TarsCloud/TarsGo/tars/codec/json"
 )
 
 func init() {
-	cmd.DefaultBrokers["redis"] = NewBroker
+	//cmd.DefaultBrokers["redis"] = NewBroker
 }
 
 // publication is an internal publication for the Redis broker.
@@ -73,6 +74,7 @@ func (s *subscriber) recv() {
 
 			// Handle error? Retry?
 			if err := s.handle(&p); err != nil {
+				log.Print(err)
 				break
 			}
 
