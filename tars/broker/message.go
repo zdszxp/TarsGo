@@ -1,40 +1,31 @@
-package grpc
+package broker
 
 import (
-	"github.com/micro/go-micro/client"
+	//"github.com/micro/go-micro/client"
 )
 
-type grpcPublication struct {
-	topic       string
-	contentType string
-	payload     interface{}
-}
+// type publication struct {
+// 	topic       string
+// 	contentType string
+// 	payload     interface{}
+// }
 
-func newGRPCPublication(topic string, payload interface{}, contentType string, opts ...client.MessageOption) client.Message {
-	var options client.MessageOptions
-	for _, o := range opts {
-		o(&options)
-	}
+// func NewPublication(topic string, payload interface{}, contentType string) Message {
+// 	return &publication{
+// 		payload:     payload,
+// 		topic:       topic,
+// 		contentType: contentType,
+// 	}
+// }
 
-	if len(options.ContentType) > 0 {
-		contentType = options.ContentType
-	}
+// func (p *publication) ContentType() string {
+// 	return p.contentType
+// }
 
-	return &grpcPublication{
-		payload:     payload,
-		topic:       topic,
-		contentType: contentType,
-	}
-}
+// func (p *publication) Topic() string {
+// 	return p.topic
+// }
 
-func (g *grpcPublication) ContentType() string {
-	return g.contentType
-}
-
-func (g *grpcPublication) Topic() string {
-	return g.topic
-}
-
-func (g *grpcPublication) Payload() interface{} {
-	return g.payload
-}
+// func (p *publication) Payload() interface{} {
+// 	return p.payload
+// }

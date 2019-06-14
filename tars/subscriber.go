@@ -1,4 +1,4 @@
-package server
+package tars
 
 import (
 	"bytes"
@@ -6,16 +6,131 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"sync"
+	"unicode"
+	"unicode/utf8"
 
-	"github.com/micro/go-micro/broker"
-	"github.com/micro/go-micro/codec"
-	"github.com/micro/go-micro/metadata"
-	"github.com/micro/go-micro/registry"
+	"github.com/TarsCloud/TarsGo/tars/broker"
+	"github.com/TarsCloud/TarsGo/tars/codec"
+	"github.com/TarsCloud/TarsGo/tars/metadata"
+	//"github.com/TarsCloud/TarsGo/tars/registry"
 )
 
 const (
 	subSig = "func(context.Context, interface{}) error"
 )
+
+type SubscribersOptions struct {
+	//HdlrWrappers []HandlerWrapper
+	SubWrappers []SubscriberWrapper
+
+	// Other options for implementations of the interface
+	// can be stored in a context
+	Context context.Context
+}
+
+type SubscribersOption func(*SubscribersOptions)
+
+type Subscribers struct {
+	sync.RWMutex
+	wg   *sync.WaitGroup
+	opts SubscribersOptions
+	// handlers    map[string]server.Handler
+	subscribers map[*subscriber][]broker.Subscriber
+	registered  bool
+}
+
+func newSubscribersOptions(opt ...SubscribersOption) SubscribersOptions {
+	opts := SubscribersOptions{}
+
+	for _, o := range opt {
+		o(&opts)
+	}
+
+	return opts
+}
+
+func NewSubscribers(opts ...SubscribersOption) *Subscribers {
+	options := newSubscribersOptions(opts...)
+
+	// create a grpc server
+	srv := &Subscribers{
+		opts:        options,
+		subscribers: make(map[*subscriber][]broker.Subscriber),
+		wg:          wait(options.Context),
+	}
+
+	return srv
+}
+
+func (s *Subscribers) NewSubscriber(topic string, handler interface{}, opts ...SubscriberOption) Subscriber {
+	return newSubscriber(topic, handler, opts...)
+}
+
+func (s *Subscribers) Init() error {
+	// already registered? don't need to register subscribers
+	if s.registered {
+		return nil
+	}
+
+	s.Lock()
+	defer s.Unlock()
+
+	s.registered = true
+
+	for sb := range s.subscribers {
+		handler := s.createSubHandler(sb, s.opts)
+		var opts []broker.SubscribeOption
+		if queue := sb.Options().Queue; len(queue) > 0 {
+			opts = append(opts, broker.Queue(queue))
+		}
+
+		if !sb.Options().AutoAck {
+			opts = append(opts, broker.DisableAutoAck())
+		}
+
+		sub, err := broker.DefaultBroker.Subscribe(sb.Topic(), handler, opts...)
+		if err != nil {
+			return err
+		}
+		s.subscribers[sb] = []broker.Subscriber{sub}
+	}
+
+	return nil
+}
+
+func (s *Subscribers) Subscribe(sb Subscriber) error {
+	sub, ok := sb.(*subscriber)
+	if !ok {
+		return fmt.Errorf("invalid subscriber: expected *subscriber")
+	}
+	if len(sub.handlers) == 0 {
+		return fmt.Errorf("invalid subscriber: no handler functions")
+	}
+
+	if err := validateSubscriber(sb); err != nil {
+		return err
+	}
+
+	s.Lock()
+
+	_, ok = s.subscribers[sub]
+	if ok {
+		return fmt.Errorf("subscriber %v already exists", sub)
+	}
+	s.subscribers[sub] = nil
+	s.Unlock()
+	return nil
+}
+
+// Subscriber interface represents a subscription to a given topic using
+// a specific subscriber function or object with endpoints.
+type Subscriber interface {
+	Topic() string
+	Subscriber() interface{}
+	//Endpoints() []*registry.Endpoint
+	Options() SubscriberOptions
+}
 
 type handler struct {
 	method  reflect.Value
@@ -29,8 +144,8 @@ type subscriber struct {
 	typ        reflect.Type
 	subscriber interface{}
 	handlers   []*handler
-	endpoints  []*registry.Endpoint
-	opts       SubscriberOptions
+	//endpoints  []*registry.Endpoint
+	opts SubscriberOptions
 }
 
 func newSubscriber(topic string, sub interface{}, opts ...SubscriberOption) Subscriber {
@@ -42,7 +157,7 @@ func newSubscriber(topic string, sub interface{}, opts ...SubscriberOption) Subs
 		o(&options)
 	}
 
-	var endpoints []*registry.Endpoint
+	//var endpoints []*registry.Endpoint
 	var handlers []*handler
 
 	if typ := reflect.TypeOf(sub); typ.Kind() == reflect.Func {
@@ -60,17 +175,17 @@ func newSubscriber(topic string, sub interface{}, opts ...SubscriberOption) Subs
 
 		handlers = append(handlers, h)
 
-		endpoints = append(endpoints, &registry.Endpoint{
-			Name:    "Func",
-			Request: extractSubValue(typ),
-			Metadata: map[string]string{
-				"topic":      topic,
-				"subscriber": "true",
-			},
-		})
+		// endpoints = append(endpoints, &registry.Endpoint{
+		// 	Name:    "Func",
+		// 	Request: extractSubValue(typ),
+		// 	Metadata: map[string]string{
+		// 		"topic":      topic,
+		// 		"subscriber": "true",
+		// 	},
+		// })
 	} else {
-		hdlr := reflect.ValueOf(sub)
-		name := reflect.Indirect(hdlr).Type().Name()
+		//hdlr := reflect.ValueOf(sub)
+		//name := reflect.Indirect(hdlr).Type().Name()
 
 		for m := 0; m < typ.NumMethod(); m++ {
 			method := typ.Method(m)
@@ -88,14 +203,14 @@ func newSubscriber(topic string, sub interface{}, opts ...SubscriberOption) Subs
 
 			handlers = append(handlers, h)
 
-			endpoints = append(endpoints, &registry.Endpoint{
-				Name:    name + "." + method.Name,
-				Request: extractSubValue(method.Type),
-				Metadata: map[string]string{
-					"topic":      topic,
-					"subscriber": "true",
-				},
-			})
+			// endpoints = append(endpoints, &registry.Endpoint{
+			// 	Name:    name + "." + method.Name,
+			// 	Request: extractSubValue(method.Type),
+			// 	Metadata: map[string]string{
+			// 		"topic":      topic,
+			// 		"subscriber": "true",
+			// 	},
+			// })
 		}
 	}
 
@@ -105,8 +220,8 @@ func newSubscriber(topic string, sub interface{}, opts ...SubscriberOption) Subs
 		topic:      topic,
 		subscriber: sub,
 		handlers:   handlers,
-		endpoints:  endpoints,
-		opts:       options,
+		//endpoints:  endpoints,
+		opts: options,
 	}
 }
 
@@ -164,7 +279,7 @@ func validateSubscriber(sub Subscriber) error {
 	return nil
 }
 
-func (s *rpcServer) createSubHandler(sb *subscriber, opts Options) broker.Handler {
+func (s *Subscribers) createSubHandler(sb *subscriber, opts SubscribersOptions) broker.Handler {
 	return func(p broker.Publication) error {
 		msg := p.Message()
 
@@ -178,7 +293,7 @@ func (s *rpcServer) createSubHandler(sb *subscriber, opts Options) broker.Handle
 		}
 
 		// get codec
-		cf, err := s.newCodec(ct)
+		cf, err := NewCodec(ct)
 		if err != nil {
 			return err
 		}
@@ -222,7 +337,12 @@ func (s *rpcServer) createSubHandler(sb *subscriber, opts Options) broker.Handle
 				return err
 			}
 
-			fn := func(ctx context.Context, msg Message) error {
+			fmt.Println("[sub] msg: ", msg)
+			fmt.Println("[sub] body: ", *(req.Interface().(*map[int]string)))
+
+			fmt.Println("[sub] received message:", req.Interface(), "header", p.Message().Header)
+
+			fn := func(ctx context.Context, payload interface{}) error {
 				var vals []reflect.Value
 				if sb.typ.Kind() != reflect.Func {
 					vals = append(vals, sb.rcvr)
@@ -231,7 +351,7 @@ func (s *rpcServer) createSubHandler(sb *subscriber, opts Options) broker.Handle
 					vals = append(vals, reflect.ValueOf(ctx))
 				}
 
-				vals = append(vals, reflect.ValueOf(msg.Payload()))
+				vals = append(vals, reflect.ValueOf(payload))
 
 				returnValues := handler.method.Call(vals)
 				if err := returnValues[0].Interface(); err != nil {
@@ -240,9 +360,9 @@ func (s *rpcServer) createSubHandler(sb *subscriber, opts Options) broker.Handle
 				return nil
 			}
 
-			for i := len(opts.SubWrappers); i > 0; i-- {
-				fn = opts.SubWrappers[i-1](fn)
-			}
+			// for i := len(opts.SubWrappers); i > 0; i-- {
+			// 	fn = opts.SubWrappers[i-1](fn)
+			// }
 
 			if s.wg != nil {
 				s.wg.Add(1)
@@ -253,11 +373,7 @@ func (s *rpcServer) createSubHandler(sb *subscriber, opts Options) broker.Handle
 					defer s.wg.Done()
 				}
 
-				results <- fn(ctx, &rpcMessage{
-					topic:       sb.topic,
-					contentType: ct,
-					payload:     req.Interface(),
-				})
+				results <- fn(ctx, req.Interface())
 			}()
 		}
 
@@ -285,10 +401,43 @@ func (s *subscriber) Subscriber() interface{} {
 	return s.subscriber
 }
 
-func (s *subscriber) Endpoints() []*registry.Endpoint {
-	return s.endpoints
-}
+// func (s *subscriber) Endpoints() []*registry.Endpoint {
+// 	return s.endpoints
+// }
 
 func (s *subscriber) Options() SubscriberOptions {
 	return s.opts
+}
+
+var (
+	// Precompute the reflect type for error. Can't use error directly
+	// because Typeof takes an empty interface value. This is annoying.
+	typeOfError = reflect.TypeOf((*error)(nil)).Elem()
+)
+
+// Is this an exported - upper case - name?
+func isExported(name string) bool {
+	rune, _ := utf8.DecodeRuneInString(name)
+	return unicode.IsUpper(rune)
+}
+
+// Is this type exported or a builtin?
+func isExportedOrBuiltinType(t reflect.Type) bool {
+	for t.Kind() == reflect.Ptr {
+		t = t.Elem()
+	}
+	// PkgPath will be non-empty even for an exported type,
+	// so we need to check the type name as well.
+	return isExported(t.Name()) || t.PkgPath() == ""
+}
+
+func wait(ctx context.Context) *sync.WaitGroup {
+	if ctx == nil {
+		return nil
+	}
+	wg, ok := ctx.Value("wait").(*sync.WaitGroup)
+	if !ok {
+		return nil
+	}
+	return wg
 }

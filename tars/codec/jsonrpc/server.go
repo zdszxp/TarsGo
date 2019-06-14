@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/micro/go-micro/codec"
+	"github.com/TarsCloud/TarsGo/tars/codec"
 )
 
 type serverCodec struct {
