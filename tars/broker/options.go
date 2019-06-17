@@ -45,7 +45,7 @@ type PublishOption func(*PublishOptions)
 type SubscribeOption func(*SubscribeOptions)
 
 var (
-	registryKey = "github.com/TarsCloud/TarsGo/tars/registry"
+	//registryKey = "github.com/TarsCloud/TarsGo/tars/registry"
 )
 
 func NewSubscribeOptions(opts ...SubscribeOption) SubscribeOptions {

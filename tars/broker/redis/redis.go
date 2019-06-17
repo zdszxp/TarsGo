@@ -6,7 +6,6 @@ import (
 	"errors"
 	"strings"
 	"time"
-	"log"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/TarsCloud/TarsGo/tars/broker"
@@ -74,7 +73,6 @@ func (s *subscriber) recv() {
 
 			// Handle error? Retry?
 			if err := s.handle(&p); err != nil {
-				log.Print(err)
 				break
 			}
 

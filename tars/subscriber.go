@@ -13,93 +13,26 @@ import (
 	"github.com/TarsCloud/TarsGo/tars/broker"
 	"github.com/TarsCloud/TarsGo/tars/codec"
 	"github.com/TarsCloud/TarsGo/tars/metadata"
-	//"github.com/TarsCloud/TarsGo/tars/registry"
 )
 
 const (
 	subSig = "func(context.Context, interface{}) error"
 )
 
-type SubscribersOptions struct {
-	//HdlrWrappers []HandlerWrapper
-	SubWrappers []SubscriberWrapper
-
-	// Other options for implementations of the interface
-	// can be stored in a context
-	Context context.Context
-}
-
-type SubscribersOption func(*SubscribersOptions)
-
-type Subscribers struct {
+type subscriberHelper struct {
 	sync.RWMutex
-	wg   *sync.WaitGroup
-	opts SubscribersOptions
+	wg *sync.WaitGroup
+
 	// handlers    map[string]server.Handler
 	subscribers map[*subscriber][]broker.Subscriber
-	registered  bool
+	opts        *BrokerOptions
 }
 
-func newSubscribersOptions(opt ...SubscribersOption) SubscribersOptions {
-	opts := SubscribersOptions{}
-
-	for _, o := range opt {
-		o(&opts)
-	}
-
-	return opts
-}
-
-func NewSubscribers(opts ...SubscribersOption) *Subscribers {
-	options := newSubscribersOptions(opts...)
-
-	// create a grpc server
-	srv := &Subscribers{
-		opts:        options,
-		subscribers: make(map[*subscriber][]broker.Subscriber),
-		wg:          wait(options.Context),
-	}
-
-	return srv
-}
-
-func (s *Subscribers) NewSubscriber(topic string, handler interface{}, opts ...SubscriberOption) Subscriber {
+func (s *subscriberHelper) NewSubscriber(topic string, handler interface{}, opts ...SubscriberOption) Subscriber {
 	return newSubscriber(topic, handler, opts...)
 }
 
-func (s *Subscribers) Init() error {
-	// already registered? don't need to register subscribers
-	if s.registered {
-		return nil
-	}
-
-	s.Lock()
-	defer s.Unlock()
-
-	s.registered = true
-
-	for sb := range s.subscribers {
-		handler := s.createSubHandler(sb, s.opts)
-		var opts []broker.SubscribeOption
-		if queue := sb.Options().Queue; len(queue) > 0 {
-			opts = append(opts, broker.Queue(queue))
-		}
-
-		if !sb.Options().AutoAck {
-			opts = append(opts, broker.DisableAutoAck())
-		}
-
-		sub, err := broker.DefaultBroker.Subscribe(sb.Topic(), handler, opts...)
-		if err != nil {
-			return err
-		}
-		s.subscribers[sb] = []broker.Subscriber{sub}
-	}
-
-	return nil
-}
-
-func (s *Subscribers) Subscribe(sb Subscriber) error {
+func (s *subscriberHelper) Subscribe(sb Subscriber) error {
 	sub, ok := sb.(*subscriber)
 	if !ok {
 		return fmt.Errorf("invalid subscriber: expected *subscriber")
@@ -113,13 +46,29 @@ func (s *Subscribers) Subscribe(sb Subscriber) error {
 	}
 
 	s.Lock()
+	defer s.Unlock()
 
 	_, ok = s.subscribers[sub]
 	if ok {
 		return fmt.Errorf("subscriber %v already exists", sub)
 	}
-	s.subscribers[sub] = nil
-	s.Unlock()
+
+	handler := s.createSubHandler(sub, *s.opts)
+	var opts []broker.SubscribeOption
+	if queue := sb.Options().Queue; len(queue) > 0 {
+		opts = append(opts, broker.Queue(queue))
+	}
+
+	if !sb.Options().AutoAck {
+		opts = append(opts, broker.DisableAutoAck())
+	}
+
+	bsub, err := broker.DefaultBroker.Subscribe(sub.Topic(), handler, opts...)
+	if err != nil {
+		return err
+	}
+	s.subscribers[sub] = []broker.Subscriber{bsub}
+
 	return nil
 }
 
@@ -225,6 +174,7 @@ func newSubscriber(topic string, sub interface{}, opts ...SubscriberOption) Subs
 	}
 }
 
+//check subscriber signature
 func validateSubscriber(sub Subscriber) error {
 	typ := reflect.TypeOf(sub.Subscriber())
 	var argType reflect.Type
@@ -279,7 +229,7 @@ func validateSubscriber(sub Subscriber) error {
 	return nil
 }
 
-func (s *Subscribers) createSubHandler(sb *subscriber, opts SubscribersOptions) broker.Handler {
+func (s *subscriberHelper) createSubHandler(sb *subscriber, opts BrokerOptions) broker.Handler {
 	return func(p broker.Publication) error {
 		msg := p.Message()
 
@@ -338,7 +288,7 @@ func (s *Subscribers) createSubHandler(sb *subscriber, opts SubscribersOptions) 
 			}
 
 			fmt.Println("[sub] msg: ", msg)
-			fmt.Println("[sub] body: ", *(req.Interface().(*map[int]string)))
+			//fmt.Println("[sub] body: ", *(req.Interface().(*map[int]string)))
 
 			fmt.Println("[sub] received message:", req.Interface(), "header", p.Message().Header)
 

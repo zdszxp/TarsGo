@@ -14,7 +14,7 @@ import (
 )
 
 var (
-	DefaultContentType = "application/protobuf"
+	DefaultContentType = "application/octet-stream" 
 
 	DefaultCodecs = map[string]codec.NewCodec{
 		"application/grpc":         grpc.NewCodec,
@@ -27,14 +27,14 @@ var (
 		"application/octet-stream": raw.NewCodec,
 	}
 
-	// TODO: remove legacy codec list
-	defaultCodecs = map[string]codec.NewCodec{
-		"application/json":         jsonrpc.NewCodec,
-		"application/json-rpc":     jsonrpc.NewCodec,
-		"application/protobuf":     protorpc.NewCodec,
-		"application/proto-rpc":    protorpc.NewCodec,
-		"application/octet-stream": protorpc.NewCodec,
-	}
+	// // TODO: remove legacy codec list
+	// defaultCodecs = map[string]codec.NewCodec{
+	// 	"application/json":         jsonrpc.NewCodec,
+	// 	"application/json-rpc":     jsonrpc.NewCodec,
+	// 	"application/protobuf":     protorpc.NewCodec,
+	// 	"application/proto-rpc":    protorpc.NewCodec,
+	// 	"application/octet-stream": protorpc.NewCodec,
+	// }
 )
 
 func NewCodec(contentType string) (codec.NewCodec, error) {

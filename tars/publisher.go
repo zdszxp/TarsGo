@@ -1,23 +1,44 @@
 package tars
 
 import (
-	"context"
 	"bytes"
-	"sync"
+	"context"
 	"log"
-	// "reflect"
+	"os"
 
 	"github.com/google/uuid"
 
-	"github.com/TarsCloud/TarsGo/tars/errors"
 	"github.com/TarsCloud/TarsGo/tars/broker"
-	"github.com/TarsCloud/TarsGo/tars/metadata"
 	"github.com/TarsCloud/TarsGo/tars/codec"
+	"github.com/TarsCloud/TarsGo/tars/errors"
+	"github.com/TarsCloud/TarsGo/tars/metadata"
 )
 
-var (
-	once sync.Once
-)
+// Publisher is syntactic sugar for publishing
+// type Publisher interface {
+// 	Publish(ctx context.Context, msg interface{}, opts ...PublishOption) error
+// }
+
+// //Publisher is binded with endpoint
+// type publisher struct {
+// 	topic string
+// }
+
+// func (p *publisher) Publish(ctx context.Context, contentType string, msg interface{}, opts ...PublishOption) error {
+// 	return publish(ctx, contentType, p.topic, msg, opts...)
+// }
+
+// NewPublisher returns a new Publisher
+// func NewPublisher(contentType string, topic string, opts ...PublishOption) Publisher {
+// 	options := PublishOptions{
+// 		Context: context.Background(),
+// 	}
+// 	for _, o := range opts {
+// 		o(&options)
+// 	}
+
+// 	return &publisher{contentType, topic}
+// }
 
 type PublishOptions struct {
 	// Exchange is the routing exchange for the message
@@ -30,15 +51,14 @@ type PublishOptions struct {
 // PublishOption used by Publish
 type PublishOption func(*PublishOptions)
 
-type Publisher struct {
-	ContentType string
+// WithExchange sets the exchange to route a message through
+func WithExchange(e string) PublishOption {
+	return func(o *PublishOptions) {
+		o.Exchange = e
+	}
 }
 
-func (p *Publisher) Publish(ctx context.Context, topic string, msg interface{}, opts ...PublishOption) error {
-	return publish(ctx, p.ContentType, topic, msg, opts...)
-}
-
-func publish(ctx context.Context, contentType string, topic string, msg interface{}, opts ...PublishOption) error {
+func (bh *brokerFHelper) Publish(ctx context.Context, contentType string, topic string, msg interface{}, opts ...PublishOption) error {
 	options := PublishOptions{
 		Context: context.Background(),
 	}
@@ -56,24 +76,22 @@ func publish(ctx context.Context, contentType string, topic string, msg interfac
 	md["Tars-Topic"] = topic
 	md["Tars-Id"] = id
 
-	// // get proxy
-	// if prx := os.Getenv("MICRO_PROXY"); len(prx) > 0 {
-	// 	options.Exchange = prx
-	// }
+	// get proxy
+	if prx := os.Getenv("TARS_PROXY"); len(prx) > 0 {
+		options.Exchange = prx
+	}
 
-	// // get the exchange
-	// if len(options.Exchange) > 0 {
-	// 	topic = options.Exchange
-	// }
+	// get the exchange
+	if len(options.Exchange) > 0 {
+		topic = options.Exchange
+	}
 
 	// encode message body
 	cf, err := NewCodec(contentType)
 	if err != nil {
 		return errors.InternalServerError("tars.publish", err.Error())
 	}
-
-	//log.Printf("[pub] msg: %v \n %v", msg, string(reflect.ValueOf(msg).Interface().([]uint8)))
-
+	
 	b := &buffer{bytes.NewBuffer(nil)}
 	if err := cf(b).Write(&codec.Message{
 		Target: topic,
@@ -85,19 +103,6 @@ func publish(ctx context.Context, contentType string, topic string, msg interfac
 	}, msg); err != nil {
 		return errors.InternalServerError("tars.publish", err.Error())
 	}
-
-	// var v []byte = make([]byte, 256)
-	// if err := cf(b).ReadBody(&v); err != nil {
-	// 	return err
-	// }
-
-	log.Println("[pub] encode: ", b.String())
-
-	//log.Printf("[pub] msg: %v \n %v", msg, string(reflect.ValueOf(msg).Interface().([]uint8)))
-
-	// once.Do(func() {
-	// 	initBroker()
-	// })
 
 	return broker.Publish(topic, &broker.Message{
 		Header: md,
