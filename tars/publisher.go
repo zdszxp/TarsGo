@@ -3,7 +3,6 @@ package tars
 import (
 	"bytes"
 	"context"
-	"log"
 	"os"
 
 	"github.com/google/uuid"
