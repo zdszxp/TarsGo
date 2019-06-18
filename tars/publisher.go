@@ -103,7 +103,7 @@ func (bh *brokerFHelper) Publish(ctx context.Context, contentType string, topic 
 		return errors.InternalServerError("tars.publish", err.Error())
 	}
 
-	return broker.Publish(topic, &broker.Message{
+	return getOptions().Broker().Publish(topic, &broker.Message{
 		Header: md,
 		Body:   b.Bytes(),
 	})

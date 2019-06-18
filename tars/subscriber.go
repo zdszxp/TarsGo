@@ -63,7 +63,7 @@ func (s *subscriberHelper) Subscribe(sb Subscriber) error {
 		opts = append(opts, broker.DisableAutoAck())
 	}
 
-	bsub, err := broker.DefaultBroker.Subscribe(sub.Topic(), handler, opts...)
+	bsub, err := getOptions().Broker().Subscribe(sub.Topic(), handler, opts...)
 	if err != nil {
 		return err
 	}
@@ -286,11 +286,6 @@ func (s *subscriberHelper) createSubHandler(sb *subscriber, opts BrokerOptions) 
 			if err := co.ReadBody(req.Interface()); err != nil {
 				return err
 			}
-
-			fmt.Println("[sub] msg: ", msg)
-			//fmt.Println("[sub] body: ", *(req.Interface().(*map[int]string)))
-
-			fmt.Println("[sub] received message:", req.Interface(), "header", p.Message().Header)
 
 			fn := func(ctx context.Context, payload interface{}) error {
 				var vals []reflect.Value

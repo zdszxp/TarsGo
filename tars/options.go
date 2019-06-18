@@ -5,12 +5,23 @@ import (
 	//"time"
 
 	"github.com/TarsCloud/TarsGo/tars/broker"
+	"github.com/TarsCloud/TarsGo/tars/broker/redis"
 )
+
+var tarsOpts *Options
+
+func getOptions() *Options{
+	return tarsOpts
+}
+
+func Configure(opts ...Option) {
+	tarsOpts = newOptions(opts...)
+}
 
 type Option func(*Options)
 
 type Options struct {
-	Broker    broker.Broker
+	broker    broker.Broker
 
 	// Before and After funcs
 	BeforeStart []func() error
@@ -23,22 +34,26 @@ type Options struct {
 	Context context.Context
 }
 
-func newOptions(opts ...Option) Options {
-	opt := Options{
-		Broker:    broker.DefaultBroker,
+func newOptions(opts ...Option) *Options {
+	opt := &Options{
+		broker:    redis.NewBroker(),
 		Context:   context.Background(),
 	}
 
 	for _, o := range opts {
-		o(&opt)
+		o(opt)
 	}
 
 	return opt
 }
 
+func (o *Options) Broker() broker.Broker {
+	return o.broker
+}
+
 func Broker(b broker.Broker) Option {
 	return func(o *Options) {
-		o.Broker = b
+		o.broker = b
 	}
 }
 

@@ -2,20 +2,17 @@ package tars
 
 import (
 	"context"
-	"log"
 	"sync"
 
 	"github.com/TarsCloud/TarsGo/tars/broker"
-	"github.com/TarsCloud/TarsGo/tars/broker/redis"
 )
 
 var brokerFHelperSingleton *brokerFHelper //Singleton
 var brokerFHelperSingletonInitOnce sync.Once
 
-func BrokerFHelper() *brokerFHelper {
+func BrokerHelper() *brokerFHelper {
 	brokerFHelperSingletonInitOnce.Do(func() {
 		brokerFHelperSingleton = newBrokerFHelper()
-		brokerFHelperSingleton.LoadBroker("user:foobared@192.168.10.158:6379/0")
 	})
 
 	return brokerFHelperSingleton
@@ -53,7 +50,6 @@ func WrapSubscriber(w SubscriberWrapper) BrokerOption {
 type brokerFHelper struct {
 	subscriberHelper
 
-	initOnce sync.Once
 	opts     BrokerOptions
 
 	// Other options for implementations of the interface
@@ -78,21 +74,18 @@ func newBrokerFHelper(opts ...BrokerOption) *brokerFHelper {
 
 //The connection address may be a fully qualified IANA address such
 // as: redis://user:secret@localhost:6379/0?foo=bar&qux=baz
-func (bh *brokerFHelper) LoadBroker(address string) (err error) {
-	//broker.DefaultBroker = redis.NewBroker(broker.Addrs("192.168.10.158", "6387"))
-	broker.DefaultBroker = redis.NewBroker(broker.Addrs(address))
-
-	err = broker.Init()
+func (bh *brokerFHelper) LoadBroker(opts ...broker.Option) (err error) {
+	err = getOptions().Broker().Init(opts...)
 	if err != nil {
-		log.Fatal("Broker Init error: %v", err)
+		TLOG.Errorf("Broker Init error: %v", err)
 	} else {
-		log.Print("Broker Init successfully")
+		TLOG.Debug("Broker Init successfully")
 	}
 
-	if err = broker.Connect(); err != nil {
-		log.Fatal("Broker Connect error: %v", err)
+	if err = getOptions().Broker().Connect(); err != nil {
+		TLOG.Errorf("Broker Connect error: %v", err)
 	} else {
-		log.Print("Broker Connect successfully")
+		TLOG.Debug("Broker Connect successfully")
 	}
 
 	return err
