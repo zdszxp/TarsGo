@@ -113,3 +113,8 @@ func (c *Communicator) GetPropertyBool(key string) (bool, bool) {
 	}
 	return false, false
 }
+
+// StringToServant get the servant with a string servant
+func (c *Communicator) StringToServant(servant string) *ServantProxy{
+	return c.s.GetServantProxy(servant)
+}
