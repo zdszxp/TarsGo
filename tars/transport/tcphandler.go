@@ -35,7 +35,7 @@ func (h *tcpHandler) Listen() (err error) {
 		return err
 	}
 	h.lis, err = net.ListenTCP("tcp4", addr)
-	TLOG.Info("Listening on", cfg.Address)
+	TLOG.Info("Listening on ", cfg.Address)
 	return
 }
 
@@ -84,6 +84,11 @@ func (h *tcpHandler) Handle() error {
 			}
 			continue
 		}
+
+		if h.ts.TCPConnConnectHandler != nil {
+			h.ts.TCPConnConnectHandler(conn)
+		}
+
 		go func(conn *net.TCPConn) {
 			TLOG.Debug("TCP accept:", conn.RemoteAddr())
 			atomic.AddInt32(&h.acceptNum, 1)
@@ -92,6 +97,10 @@ func (h *tcpHandler) Handle() error {
 			conn.SetNoDelay(cfg.TCPNoDelay)
 			h.recv(conn)
 			atomic.AddInt32(&h.acceptNum, -1)
+
+			if h.ts.TCPConnDisconnectHandler != nil {
+				h.ts.TCPConnDisconnectHandler(conn)
+			}
 		}(conn)
 	}
 	if h.gpool != nil {

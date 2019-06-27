@@ -4,9 +4,11 @@ import (
 	"context"
 	"sync/atomic"
 	"time"
+	"net"
 
 	"github.com/TarsCloud/TarsGo/tars/util/rogger"
 	"github.com/TarsCloud/TarsGo/tars/util/rtimer"
+	"github.com/TarsCloud/TarsGo/tars/api/session"
 )
 
 const (
@@ -58,6 +60,9 @@ type TarsServer struct {
 	idleTime   time.Time
 	isClosed   bool
 	numInvoke  int32
+
+	TCPConnConnectHandler func (*net.TCPConn) session.Session
+	TCPConnDisconnectHandler func (*net.TCPConn)
 }
 
 //NewTarsServer new TarsServer and init with conf.
