@@ -2,6 +2,7 @@ package session
 
 import (
 	"net"
+	"encoding/binary"
 	"sync"
 )
 
@@ -37,6 +38,7 @@ type SessionManager interface{
 	GetSession(key string) (s Session, ok bool)
 	AddSession(key string, s Session) bool
 	DelSession(key string) bool
+	BroadcastRaw(buff []byte) bool
 	Broadcast(buff []byte) bool
 }
 
@@ -67,6 +69,14 @@ func (sm *sessionManager) AddSession(key string, s Session) bool{
 func (sm *sessionManager) DelSession(key string) bool{
 	sm.sessions.Delete(key)
 	return true
+}
+
+func (sm *sessionManager) BroadcastRaw(buff []byte) bool {
+	data := make([]byte, 4+len(buff))
+	binary.BigEndian.PutUint32(data[:4], uint32(len(data)))
+	copy(data[4:], buff)
+
+	return sm.Broadcast(data)
 }
 
 func (sm *sessionManager) Broadcast(buff []byte) bool {

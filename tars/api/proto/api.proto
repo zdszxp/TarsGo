@@ -41,15 +41,3 @@ message Event {
 	// the event data
 	string data = 5;
 }
-
-//net protocol
-message NetProtocol
-{
-    /*header type:
-    "Message"   //proto message name
-    "Servant"   //servant name like "ChatApp.ChatServer.ChatObj@tcp -h 127.0.0.1 -p 10015 -t 60000" or "ChatApp.ChatServer.ChatObj"
-    "FuncName"  //can be set rpc funcname like "SendMessage"
-    */
-    map<string, string> header = 1;
-    bytes               body   = 2;
-};
