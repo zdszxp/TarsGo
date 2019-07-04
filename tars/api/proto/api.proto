@@ -7,7 +7,7 @@ message Pair {
 	repeated string values = 2;
 }
 
-// A HTTP request as RPC
+// A Proto request or A HTTP request converted to Proto
 // Forward by the api handler
 message Request {
 	string method = 1;
@@ -19,7 +19,7 @@ message Request {
 	string url = 7;
 }
 
-// A HTTP response as RPC
+// A Proto Response or A HTTP response converted to Proto
 // Expected response for the api handler
 message Response {
 	int32 statusCode = 1;
@@ -37,7 +37,7 @@ message Event {
 	// unix timestamp of event
 	int64 timestamp = 3;
 	// event headers
-        map<string, Pair> header = 4;
+    map<string, Pair> header = 4;
 	// the event data
 	string data = 5;
 }

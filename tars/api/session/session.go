@@ -6,20 +6,36 @@ import (
 	"sync"
 )
 
+const (
+	StatusAuthed = 1
+)
+
 // Session is a net session
 type Session interface {
 	Address() string
 	SendToClient(data []byte) error
+	IsAuthed() bool
+	Authed()
 }
 
 func NewSession(conn *net.TCPConn) Session{
 	return &localSession{
-		conn,
+		Conn:conn,
+		status:0,
 	}
 }
 
 type localSession struct {
 	net.Conn
+	status int
+}
+
+func (ls *localSession) IsAuthed() bool {
+	return ls.status == StatusAuthed
+}
+
+func (ls *localSession) Authed() {
+	ls.status = StatusAuthed
 }
 
 func (ls *localSession) Address() string {
@@ -34,7 +50,7 @@ func (ls *localSession) SendToClient(data []byte) (err error) {
 	return
 }
 
-type SessionManager interface{
+type Manager interface{
 	GetSession(key string) (s Session, ok bool)
 	AddSession(key string, s Session) bool
 	DelSession(key string) bool
@@ -42,17 +58,17 @@ type SessionManager interface{
 	Broadcast(buff []byte) bool
 }
 
-func NewSessionManager() SessionManager{
-	return &sessionManager{
+func NewSessionManager() Manager{
+	return &manager{
 	}
 }
 
-type sessionManager struct{
+type manager struct{
 	sessions sync.Map
 }
 
-func (sm *sessionManager) GetSession(key string) (s Session, ok bool) {
-	value, ok := sm.sessions.Load(key)
+func (m *manager) GetSession(key string) (s Session, ok bool) {
+	value, ok := m.sessions.Load(key)
 	if ok {
 		s, ok = value.(Session)
 		return
@@ -61,32 +77,32 @@ func (sm *sessionManager) GetSession(key string) (s Session, ok bool) {
 	return nil, false
 }
 
-func (sm *sessionManager) AddSession(key string, s Session) bool{
-	_, ok := sm.sessions.LoadOrStore(key, s)
+func (m *manager) AddSession(key string, s Session) bool{
+	_, ok := m.sessions.LoadOrStore(key, s)
 	return ok
 }
 
-func (sm *sessionManager) DelSession(key string) bool{
-	sm.sessions.Delete(key)
+func (m *manager) DelSession(key string) bool{
+	m.sessions.Delete(key)
 	return true
 }
 
-func (sm *sessionManager) BroadcastRaw(buff []byte) bool {
+func (m *manager) BroadcastRaw(buff []byte) bool {
 	data := make([]byte, 4+len(buff))
 	binary.BigEndian.PutUint32(data[:4], uint32(len(data)))
 	copy(data[4:], buff)
 
-	return sm.Broadcast(data)
+	return m.Broadcast(data)
 }
 
-func (sm *sessionManager) Broadcast(buff []byte) bool {
-	return sm.RangeSessions(func(k, v interface{}) bool {
+func (m *manager) Broadcast(buff []byte) bool {
+	return m.RangeSessions(func(k, v interface{}) bool {
 		v.(Session).SendToClient(buff)
 		return true
 	})
 }
 
-func (sm *sessionManager) RangeSessions(f func(key, value interface{}) bool) bool {
-	sm.sessions.Range(f)
+func (m *manager) RangeSessions(f func(key, value interface{}) bool) bool {
+	m.sessions.Range(f)
 	return true
 }
