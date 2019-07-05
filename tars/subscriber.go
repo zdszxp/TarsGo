@@ -28,6 +28,11 @@ type subscriberHelper struct {
 	opts        *BrokerOptions
 }
 
+// RegisterSubscriber is syntactic sugar for registering a subscriber
+func (s *subscriberHelper) RegisterSubscriber(topic string, h interface{}, opts ...SubscriberOption) error {
+	return s.Subscribe(newSubscriber(topic, h, opts...))
+}
+
 func (s *subscriberHelper) NewSubscriber(topic string, handler interface{}, opts ...SubscriberOption) Subscriber {
 	return newSubscriber(topic, handler, opts...)
 }
