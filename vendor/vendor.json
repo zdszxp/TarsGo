@@ -43,6 +43,22 @@
 			"path": "github.com/golang/protobuf/protoc-gen-go/plugin",
 			"revision": "b285ee9cfc6c881bb20c0d8dc73370ea9b9ec90f",
 			"revisionTime": "2019-05-17T06:12:10Z"
+		},
+		{
+			"checksumSHA1": "29SMun24tC5a7pMCmb9Ay8RP1ic=",
+			"path": "github.com/gomodule/redigo/redis",
+			"revision": "39e2c31b7ca38b521ceb836620a269e62c895dc9",
+			"revisionTime": "2019-03-22T06:41:13Z"
+		},
+		{
+			"checksumSHA1": "bS+Y/599sS33sx/8xs0DURGFIC8=",
+			"path": "github.com/hashicorp/consul",
+			"revision": "3f3cd9a164c8113092b1173d79b106cfae1e02b1",
+			"revisionTime": "2019-07-08T19:43:15Z"
+		},
+		{
+			"path": "github.com/hashicorp/consul/api",
+			"revision": ""
 		}
 	],
 	"rootPath": "github.com/TarsCloud/TarsGo"
