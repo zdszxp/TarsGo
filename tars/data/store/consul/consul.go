@@ -6,8 +6,8 @@ import (
 	"net"
 
 	"github.com/hashicorp/consul/api"
-	"github.com/micro/go-micro/config/options"
-	"github.com/micro/go-micro/data/store"
+	"github.com/TarsCloud/TarsGo/tars/config/options"
+	"github.com/TarsCloud/TarsGo/tars/data/store"
 )
 
 type ckv struct {

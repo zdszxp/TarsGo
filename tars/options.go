@@ -6,6 +6,8 @@ import (
 
 	"github.com/TarsCloud/TarsGo/tars/broker"
 	"github.com/TarsCloud/TarsGo/tars/broker/redis"
+	"github.com/TarsCloud/TarsGo/tars/data/store"
+	"github.com/TarsCloud/TarsGo/tars/data/store/memory"
 )
 
 var tarsOpts *Options
@@ -22,6 +24,7 @@ type Option func(*Options)
 
 type Options struct {
 	broker    broker.Broker
+	store     store.Store
 
 	// Before and After funcs
 	BeforeStart []func() error
@@ -38,6 +41,7 @@ func newOptions(opts ...Option) *Options {
 	opt := &Options{
 		broker:    redis.NewBroker(),
 		Context:   context.Background(),
+		store: 	   memory.NewStore(),
 	}
 
 	for _, o := range opts {
@@ -45,6 +49,16 @@ func newOptions(opts ...Option) *Options {
 	}
 
 	return opt
+}
+
+func (o *Options) Store() store.Store {
+	return o.store
+}
+
+func Store(s store.Store) Option {
+	return func(o *Options) {
+		o.store = s
+	}
 }
 
 func (o *Options) Broker() broker.Broker {
@@ -104,4 +118,13 @@ func AfterStop(fn func() error) Option {
 	return func(o *Options) {
 		o.AfterStop = append(o.AfterStop, fn)
 	}
+}
+
+func GetStore() store.Store {
+	opts := getOptions()
+	if opts == nil {
+		return nil
+	}
+
+	return opts.Store()
 }

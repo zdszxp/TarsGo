@@ -17,6 +17,17 @@ func Dail(servant string) *ServantProxy {
 	return c.s.GetServantProxy(servant)
 }
 
+var initCommunicator sync.Once
+var comm *Communicator  //Singleton
+
+func GetCommunicator() *Communicator {
+	initCommunicator.Do(func() {
+		comm = NewCommunicator()
+	})
+
+	return comm
+}
+
 // NewCommunicator returns a new communicator. A Communicator is used for communicating with the server side which should only init once and be global!!!
 func NewCommunicator() *Communicator {
 	c := new(Communicator)
