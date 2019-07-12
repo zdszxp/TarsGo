@@ -4,6 +4,8 @@ package redis
 import (
 	"fmt"
 	"net"
+	"time"
+	"strings"
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/TarsCloud/TarsGo/tars/config/options"
@@ -17,8 +19,6 @@ var (
 	DefaultConnectTimeout = 5 * time.Second
 	DefaultReadTimeout    = 5 * time.Second
 	DefaultWriteTimeout   = 5 * time.Second
-
-	optionsKey = optionsKeyType{}
 )
 
 type rediskv struct {
@@ -30,18 +30,18 @@ func (rs *rediskv) Read(key string) (*store.Record, error) {
 	c := rs.pool.Get()
 	defer c.Close()
 
-	value, err := redis.String(c.Do("GET", sid))
+	value, err := redis.String(c.Do("GET", key))
 	if err != nil && err != redis.ErrNil {
 		return nil, err
 	}
 	
-	if value == nil {
+	if value == "" {
 		return nil, store.ErrNotFound
 	}
 
 	return &store.Record{
 		Key:   key,
-		Value: value,
+		Value: []byte(value),
 	}, nil
 }
 
@@ -66,7 +66,7 @@ func (rs *rediskv) Exist(key string) bool {
 	c := rs.pool.Get()
 	defer c.Close()
 
-	if existed, err := redis.Int(c.Do("EXISTS", sid)); err != nil || existed == 0 {
+	if existed, err := redis.Int(c.Do("EXISTS", key)); err != nil || existed == 0 {
 		return false
 	}
 	return true
