@@ -15,7 +15,8 @@ type Session interface {
 	Address() string
 	SendToClient(data []byte) error
 	IsAuthed() bool
-	Authed()
+	Authed(userData interface{})
+	UserData() interface{}
 }
 
 func NewSession(conn *net.TCPConn) Session{
@@ -28,18 +29,24 @@ func NewSession(conn *net.TCPConn) Session{
 type localSession struct {
 	net.Conn
 	status int
+	userData interface{}
 }
 
 func (ls *localSession) IsAuthed() bool {
 	return ls.status == StatusAuthed
 }
 
-func (ls *localSession) Authed() {
+func (ls *localSession) Authed(userData interface{}) {
+	ls.userData = userData
 	ls.status = StatusAuthed
 }
 
 func (ls *localSession) Address() string {
 	return ls.RemoteAddr().String()
+}
+
+func (ls *localSession) UserData() interface{} {
+	return ls.userData
 }
 
 func (ls *localSession) SendToClient(data []byte) (err error) {
