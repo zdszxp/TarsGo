@@ -154,7 +154,7 @@ func initConfig() {
 	svrCfg.Adapters["AdminAdapter"] = adapterConfig{localpoint, "tcp", "AdminObj", 1}
 	go initReport()
 
-	Configure()
+	ConfigureWithConfigs(sMap)
 }
 
 //Run the application

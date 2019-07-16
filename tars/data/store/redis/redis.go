@@ -2,11 +2,9 @@
 package redis
 
 import (
-	"fmt"
-	"net"
 	"time"
 	"strings"
-
+	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"github.com/TarsCloud/TarsGo/tars/config/options"
 	"github.com/TarsCloud/TarsGo/tars/data/store"
@@ -104,24 +102,16 @@ func NewStore(opts ...options.Option) store.Store {
 		nodes = n.([]string)
 	}
 
-	var address string
-
-	// set host
+	var rawurl string 
 	if len(nodes) > 0 {
-		addr, port, err := net.SplitHostPort(nodes[0])
-		if ae, ok := err.(*net.AddrError); ok && ae.Err == "missing port in address" {
-			port = "6379"
-			address = fmt.Sprintf("%s:%s", nodes[0], port)
-		} else if err == nil {
-			address = fmt.Sprintf("%s:%s", addr, port)
-		}
-	} else {
-		address = "redis://127.0.0.1:6379"
+		rawurl = nodes[0]
 	}
 
-	if !strings.HasPrefix("redis://", address) {
-		address = "redis://" + address
+	if !strings.HasPrefix(rawurl, "redis://") {
+		rawurl = "redis://" + rawurl
 	}
+
+	fmt.Printf("Store redis rawurl: %v\n", rawurl)
 
 	pool := &redis.Pool{
 		MaxIdle:     DefaultMaxIdle,
@@ -129,7 +119,7 @@ func NewStore(opts ...options.Option) store.Store {
 		IdleTimeout: DefaultIdleTimeout,
 		Dial: func() (redis.Conn, error) {
 			return redis.DialURL(
-				address,
+				rawurl, //Example: redis://user:secret@localhost:6379/0?foo=bar&qux=baz
 				redis.DialConnectTimeout(DefaultConnectTimeout),
 				redis.DialReadTimeout(DefaultReadTimeout),
 				redis.DialWriteTimeout(DefaultWriteTimeout),

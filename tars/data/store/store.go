@@ -4,6 +4,8 @@ package store
 import (
 	"errors"
 	"time"
+	"fmt"
+	"strings"
 
 	"github.com/TarsCloud/TarsGo/tars/config/options"
 
@@ -16,11 +18,14 @@ var (
 )
 
 func Read(s Store, x proto.Message, id string) error {
-	key := GetKey(x, id)
+	key, err := GetKey(x, id)
+	if err != nil {
+		return err
+	}
 
-	record, error := s.Read(key)
-	if error != nil {
-		return error
+	record, err := s.Read(key)
+	if err != nil {
+		return err
 	}
 
 	if err := proto.Unmarshal(record.Value, x); err != nil {
@@ -31,7 +36,10 @@ func Read(s Store, x proto.Message, id string) error {
 }
 
 func Write(s Store, x proto.Message, id string) error {
-	key := GetKey(x, id)
+	key, err := GetKey(x, id)
+	if err != nil {
+		return err
+	}
 
 	data, err := proto.Marshal(x)
 	if err != nil {
@@ -51,8 +59,19 @@ func Write(s Store, x proto.Message, id string) error {
 	return nil
 }
 
-func GetKey(x proto.Message, id string) string {
-	return proto.MessageName(x)+":"+id
+func GetKey(x proto.Message, id string) (string, error) {
+	key := proto.MessageName(x)
+	if len(key) <= 0 {
+		return key, errors.New("GetKey Failed: check import proto path")
+	}
+
+	lastIndex := strings.LastIndex(key, ".")
+	key = key[lastIndex+1:len(key)]
+	if len(key) <= 0 {
+		return key, errors.New(fmt.Sprintf("GetKey Failed:key %v", proto.MessageName(x)))
+	}
+
+	return key+":"+id, nil
 }
 
 // Store is a data storage interface

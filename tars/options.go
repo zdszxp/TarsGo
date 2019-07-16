@@ -2,29 +2,64 @@ package tars
 
 import (
 	"context"
+	"strings"
+
 	//"time"
 
 	"github.com/TarsCloud/TarsGo/tars/broker"
 	"github.com/TarsCloud/TarsGo/tars/broker/redis"
 	"github.com/TarsCloud/TarsGo/tars/data/store"
 	"github.com/TarsCloud/TarsGo/tars/data/store/memory"
+	redisStore "github.com/TarsCloud/TarsGo/tars/data/store/redis"
 )
 
 var tarsOpts *Options
 
-func getOptions() *Options{
+func getOptions() *Options {
 	return tarsOpts
 }
 
-func Configure(opts ...Option) {
+func ConfigureWithConfigs(configs map[string]string) {
+	var opts []Option
+
+	storeConfig := configs["store"]
+	if len(storeConfig) > 0 {
+		if strings.HasPrefix(storeConfig, "redis") {
+			var rawurl string
+			if strings.HasPrefix(storeConfig, "redis"+"@") {
+				rawurl = strings.TrimPrefix(storeConfig, "redis"+"@")
+			}
+
+			opts = append(opts, Store(redisStore.NewStore(store.Nodes(rawurl))))
+		} else if strings.HasPrefix(storeConfig, "memory") {
+			opts = append(opts, Store(memory.NewStore()))
+		}
+	}
+
+	brokerConfig := configs["broker"]
+	if len(brokerConfig) > 0 {
+		if strings.HasPrefix(brokerConfig, "redis") {
+			var rawurl string
+			if strings.HasPrefix(storeConfig, "redis"+"@") {
+				rawurl = strings.TrimPrefix(storeConfig, "redis"+"@")
+			}
+
+			opts = append(opts, Broker(redis.NewBroker(broker.Addrs(rawurl))))
+		}
+	}
+
+	configure(opts...)
+}
+
+func configure(opts ...Option) {
 	tarsOpts = newOptions(opts...)
 }
 
 type Option func(*Options)
 
 type Options struct {
-	broker    broker.Broker
-	store     store.Store
+	broker broker.Broker
+	store  store.Store
 
 	// Before and After funcs
 	BeforeStart []func() error
@@ -39,9 +74,9 @@ type Options struct {
 
 func newOptions(opts ...Option) *Options {
 	opt := &Options{
-		broker:    redis.NewBroker(),
-		Context:   context.Background(),
-		store: 	   memory.NewStore(),
+		//broker:  redis.NewBroker(),
+		Context: context.Background(),
+		//store:   memory.NewStore(),
 	}
 
 	for _, o := range opts {
