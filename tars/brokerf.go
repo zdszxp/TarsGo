@@ -75,7 +75,7 @@ func newBrokerFHelper(opts ...BrokerOption) *brokerFHelper {
 
 //The connection address may be a fully qualified IANA address such
 // as: redis://user:secret@localhost:6379/0?foo=bar&qux=baz
-func (bh *brokerFHelper) LoadBroker(opts ...broker.Option) (err error) {
+func (bh *brokerFHelper) loadBroker(opts ...broker.Option) (err error) {
 	if getOptions().Broker() == nil {
 		err = errors.New("the config file must contains the broker configs")
 		return 
@@ -95,4 +95,20 @@ func (bh *brokerFHelper) LoadBroker(opts ...broker.Option) (err error) {
 	}
 
 	return err
+}
+
+func (bh *brokerFHelper) unloadBroker() (err error) {
+	if getOptions().Broker() == nil {
+		err = errors.New("the config file must contains the broker configs")
+		return 
+	}
+
+	err = getOptions().Broker().Disconnect()
+	if err != nil {
+		TLOG.Errorf("Broker unload error: %v", err)
+	} else {
+		TLOG.Debug("Broker unload successfully")
+	}
+
+	return
 }
