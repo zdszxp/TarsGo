@@ -40,6 +40,11 @@ $(TARGET): TARSBUILD $(GO_SRC) PROTOBUILD
 ifneq ($(TARS_SRC),)
 TARSBUILD: $(TARS_SRC)
 	$(TARS2GO) $(J2GO_FLAG) $(TARS_SRC)
+
+	@if [ ! -e $(GOPATH)/src/vendor/${APP} ]; then \
+		mkdir -p $(GOPATH)/src/vendor/${APP}; \
+	fi
+	@cd ./vendor/${APP}&&cp -rf * $(GOPATH)/src/vendor/${APP}/;
 else
 TARSBUILD:
 endif
@@ -49,7 +54,14 @@ PROTOBUILD: $(PROTO_SRC)
 	@if [ ! -e "./vendor/${APP}" ]; then \
 		mkdir -p ./vendor/${APP}; \
 	fi
-	$(PROTO2GO) $(PROTO_FLAG) $(PROTO_SRC)
+	@for i in $(PROTO_SRC); do \
+		$(PROTO2GO) $(PROTO_FLAG) $$i;\
+	done;
+	@if [ ! -e "$(GOPATH)/src/vendor/${APP}" ]; then \
+		mkdir -p $(GOPATH)/src/vendor/${APP}; \
+	fi
+	
+	@cd ./vendor/${APP}&&cp -rf * $(GOPATH)/src/vendor/${APP}/;
 else
 PROTOBUILD:
 endif
