@@ -3,7 +3,6 @@ package tars
 import (
 	"context"
 	"sync"
-	"errors"
 
 	"github.com/TarsCloud/TarsGo/tars/broker"
 )
@@ -71,44 +70,4 @@ func newBrokerFHelper(opts ...BrokerOption) *brokerFHelper {
 	}
 
 	return srv
-}
-
-//The connection address may be a fully qualified IANA address such
-// as: redis://user:secret@localhost:6379/0?foo=bar&qux=baz
-func (bh *brokerFHelper) loadBroker(opts ...broker.Option) (err error) {
-	if getOptions().Broker() == nil {
-		err = errors.New("the config file must contains the broker configs")
-		return 
-	}
-	
-	err = getOptions().Broker().Init(opts...)
-	if err != nil {
-		TLOG.Errorf("Broker Init error: %v", err)
-	} else {
-		TLOG.Debug("Broker Init successfully")
-	}
-
-	if err = getOptions().Broker().Connect(); err != nil {
-		TLOG.Errorf("Broker Connect error: %v", err)
-	} else {
-		TLOG.Debug("Broker Connect successfully")
-	}
-
-	return err
-}
-
-func (bh *brokerFHelper) unloadBroker() (err error) {
-	if getOptions().Broker() == nil {
-		err = errors.New("the config file must contains the broker configs")
-		return 
-	}
-
-	err = getOptions().Broker().Disconnect()
-	if err != nil {
-		TLOG.Errorf("Broker unload error: %v", err)
-	} else {
-		TLOG.Debug("Broker unload successfully")
-	}
-
-	return
 }

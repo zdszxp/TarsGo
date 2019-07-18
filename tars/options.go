@@ -4,8 +4,6 @@ import (
 	"context"
 	"strings"
 
-	//"time"
-
 	"github.com/TarsCloud/TarsGo/tars/broker"
 	"github.com/TarsCloud/TarsGo/tars/broker/redis"
 	"github.com/TarsCloud/TarsGo/tars/data/store"
@@ -38,13 +36,48 @@ func ConfigureWithConfigs(configs map[string]string) {
 
 	brokerConfig := configs["broker"]
 	if len(brokerConfig) > 0 {
+		var b broker.Broker
 		if strings.HasPrefix(brokerConfig, "redis") {
 			var rawurl string
-			if strings.HasPrefix(storeConfig, "redis"+"@") {
-				rawurl = strings.TrimPrefix(storeConfig, "redis"+"@")
+			if strings.HasPrefix(brokerConfig, "redis"+"@") {
+				rawurl = strings.TrimPrefix(brokerConfig, "redis"+"@")
 			}
 
-			opts = append(opts, Broker(redis.NewBroker(broker.Addrs(rawurl))))
+			b = redis.NewBroker(broker.Addrs(rawurl))
+		}
+
+		if b != nil {
+			opts = append(opts, Broker(b))
+			opts = append(opts, BeforeStart(func() error{
+				err := b.Init()
+				if err != nil {
+					TLOG.Errorf("init broker error: %v", err)
+					return err
+				} else {
+					TLOG.Debug("init broker successfully")
+				}
+
+				if err = b.Connect(); err != nil {
+					TLOG.Errorf("connect broker[%v] error: %v", err)
+					return err
+				} else {
+					TLOG.Debug("connect broker[%v] successfully")
+				}
+
+				return nil
+			}))
+
+			opts = append(opts, AfterStop(func() error{
+				err := b.Disconnect()
+				if err != nil {
+					TLOG.Errorf("unload broker error: %v", err)
+					return err
+				} else {
+					TLOG.Debug("unload broker successfully")
+				}
+				
+				return nil
+			}))
 		}
 	}
 
@@ -63,7 +96,7 @@ type Options struct {
 
 	// Before and After funcs
 	BeforeStart []func() error
-	BeforeStop  []func() error
+	BeforeStop  []func() error //not support//TO DO
 	AfterStart  []func() error
 	AfterStop   []func() error
 

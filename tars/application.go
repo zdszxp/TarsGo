@@ -162,6 +162,16 @@ func Run() {
 	Init()
 	<-statInited
 
+	opts := getOptions()
+	for _, fn := range opts.BeforeStart {
+		if err := fn(); err != nil {
+			if err != nil {
+				fmt.Println("server start failed", err)
+				os.Exit(1)
+			}
+		}
+	}
+
 	// add adminF
 	adf := new(adminf.AdminF)
 	ad := new(Admin)
@@ -195,6 +205,16 @@ func Run() {
 		}(obj)
 	}
 	go reportNotifyInfo("restart")
+
+	for _, fn := range opts.AfterStart {
+		if err := fn(); err != nil {
+			if err != nil {
+				fmt.Println("server start failed", err)
+				os.Exit(1)
+			}
+		}
+	}
+
 	mainloop()
 }
 
@@ -215,6 +235,15 @@ func mainloop() {
 		select {
 		case <-shutdown:
 			reportNotifyInfo("stop")
+
+			opts := getOptions()
+			for _, fn := range opts.AfterStop {
+				if err := fn(); err != nil {
+					if err != nil {
+						fmt.Println("afterStop error:", err)
+					}
+				}
+			}
 			return
 		case <-loop.C:
 			for name, adapter := range svrCfg.Adapters {
