@@ -18,9 +18,9 @@ import (
 
 var (
 	ErrorIdentifierNotMatch = errors.New("identifier not match")
-	ErrorAppidNotMatch      = errors.New("appid not match")
+	ErrorAppIDNotMatch      = errors.New("appid not match")
 	ErrorExpired            = errors.New("expired")
-	ErrorInvalidSignature   = errors.New("invalid signature")
+	ErrorInvalidToken   	= errors.New("invalid token")
 	signArray               = []string{
 		"TLS.appid_at_3rd",
 		"TLS.account_type",
@@ -44,7 +44,7 @@ type ecdsaSignature struct {
 	R, S *big.Int
 }
 
-func generateSignContent(obj map[string]string) string {
+func marshalTokenContent(obj map[string]string) string {
 	var buffer bytes.Buffer
 	for _, key := range signArray {
 		buffer.WriteString(key)
@@ -55,7 +55,7 @@ func generateSignContent(obj map[string]string) string {
 	return buffer.String()
 }
 
-func generateSignContentWithUserbuf(obj map[string]string) string {
+func marshalTokenContentWithUserbuf(obj map[string]string) string {
 	var buffer bytes.Buffer
 	for _, key := range signUserbufArray {
 		buffer.WriteString(key)
@@ -93,7 +93,7 @@ func verify(text string, sign string, key *ecdsa.PublicKey) error {
 	if ecdsa.Verify(key, hash[:], s.R, s.S) {
 		return nil
 	} else {
-		return ErrorInvalidSignature
+		return ErrorInvalidToken
 	}
 }
 
@@ -117,7 +117,7 @@ func base64DecodeAndUncompress(data string) ([]byte, error) {
 	return ioutil.ReadAll(r)
 }
 
-func generateSig(privateKey string, obj map[string]string, genRawMethod func(map[string]string) string) (string, error) {
+func generateToken(privateKey string, obj map[string]string, genRawMethod func(map[string]string) string) (string, error) {
 	key, err := readPrivateKey(privateKey)
 	if err != nil {
 		return "", err
@@ -137,42 +137,38 @@ func generateSig(privateKey string, obj map[string]string, genRawMethod func(map
 	return compressAndBase64Encode(text), nil
 }
 
-func GenerateUsersigWithExpire(privateKey string, appid int, identifier string, expire int64) (string, error) {
+func GenerateTokenWithExpire(privateKey string, appid int, identifier string, expire int64) (string, error) {
 	obj := map[string]string{
 		"TLS.account_type": "0",
 		"TLS.identifier":   "" + identifier,
 		"TLS.appid_at_3rd": "0",
 		"TLS.sdk_appid":    strconv.Itoa(appid),
 		"TLS.expire_after": strconv.FormatInt(expire, 10),
-		"TLS.version":      "201610110000",
+		"TLS.version":      "201907180000",
 		"TLS.time":         strconv.FormatInt(time.Now().Unix(), 10),
 	}
-	return generateSig(privateKey, obj, generateSignContent)
+	return generateToken(privateKey, obj, marshalTokenContent)
 }
 
-func GenerateUsersig(privateKey string, appid int, identifier string) (string, error) {
-	return GenerateUsersigWithExpire(privateKey, appid, identifier, 60*60*24*180)
+func GenerateToken(privateKey string, appid int, identifier string) (string, error) {
+	return GenerateTokenWithExpire(privateKey, appid, identifier, 60*60*24*180)
 }
 
-func genSig(sdkappid int, identifier string, priKey string) (string, error) {
-	return GenerateUsersigWithExpire(priKey, sdkappid, identifier, 60*60*24*180)
-}
-
-func GenerateUsersigWithUserbuf(privateKey string, appid int, identifier string, expire int64, userbuf []byte) (string, error) {
+func GenerateTokenWithUserbuf(privateKey string, appid int, identifier string, expire int64, userbuf []byte) (string, error) {
 	obj := map[string]string{
 		"TLS.account_type": "0",
 		"TLS.identifier":   "" + identifier,
 		"TLS.appid_at_3rd": "0",
 		"TLS.sdk_appid":    strconv.Itoa(appid),
 		"TLS.expire_after": strconv.FormatInt(expire, 10),
-		"TLS.version":      "201610110000",
+		"TLS.version":      "201907180000",
 		"TLS.time":         strconv.FormatInt(time.Now().Unix(), 10),
 		"TLS.userbuf":      base64.StdEncoding.EncodeToString(userbuf),
 	}
-	return generateSig(privateKey, obj, generateSignContentWithUserbuf)
+	return generateToken(privateKey, obj, marshalTokenContentWithUserbuf)
 }
 
-func readAndVerifyUserSig(userSig string, appid int, identifier string, publicKey string, genRawMethod func(map[string]string) string) (map[string]string, error) {
+func readAndVerifyToken(userSig string, appid int, identifier string, publicKey string, genRawMethod func(map[string]string) string) (map[string]string, error) {
 	text, err := base64DecodeAndUncompress(userSig)
 	if err != nil {
 		return nil, err
@@ -186,7 +182,7 @@ func readAndVerifyUserSig(userSig string, appid int, identifier string, publicKe
 		return nil, ErrorIdentifierNotMatch
 	}
 	if obj["TLS.sdk_appid"] != strconv.Itoa(appid) {
-		return nil, ErrorAppidNotMatch
+		return nil, ErrorAppIDNotMatch
 	}
 	createTime, err := strconv.ParseInt(obj["TLS.time"], 10, 64)
 	if err != nil {
@@ -196,7 +192,7 @@ func readAndVerifyUserSig(userSig string, appid int, identifier string, publicKe
 	if err != nil {
 		return nil, err
 	}
-	if createTime+expire < time.Now().Unix() {
+	if createTime + expire < time.Now().Unix() {
 		return nil, ErrorExpired
 	}
 	key, err := readPublicKey(publicKey)
@@ -211,13 +207,13 @@ func readAndVerifyUserSig(userSig string, appid int, identifier string, publicKe
 	return obj, nil
 }
 
-func VerifyUsersig(publicKey string, usersig string, appid int, identifier string) error {
-	_, err := readAndVerifyUserSig(usersig, appid, identifier, publicKey, generateSignContent)
+func VerifyToken(publicKey string, token string, appid int, identifier string) error {
+	_, err := readAndVerifyToken(token, appid, identifier, publicKey, marshalTokenContent)
 	return err
 }
 
-func VerifyUsersigWithUserbuf(publicKey string, usersig string, appid int, identifier string) ([]byte, error) {
-	obj, err := readAndVerifyUserSig(usersig, appid, identifier, publicKey, generateSignContentWithUserbuf)
+func VerifyTokenWithUserbuf(publicKey string, token string, appid int, identifier string) ([]byte, error) {
+	obj, err := readAndVerifyToken(token, appid, identifier, publicKey, marshalTokenContentWithUserbuf)
 	if err != nil {
 		return nil, err
 	}
