@@ -1,10 +1,14 @@
 package tls
 
 import (
+	"bytes"
 	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"os"
 )
 
 var (
@@ -71,4 +75,60 @@ func readPublicKey(publicKey string) (*ecdsa.PublicKey, error) {
 		}
 	}
 	return nil, errors.New("invalid pem")
+}
+
+func GenerateKey() (privateKeyBytes, publicKeyBytes []byte, err error) {
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return
+	}
+
+	derText, err := x509.MarshalECPrivateKey(privateKey)
+	if err != nil {
+		return
+	}
+
+	keyOut := bytes.NewBuffer(nil)
+	pem.Encode(keyOut, &pem.Block{Type: "EC PRIVATE KEY", Bytes: derText})
+	privateKeyBytes = keyOut.Bytes()
+
+	//public key
+	publicKey := privateKey.PublicKey
+
+	derText, err = x509.MarshalPKIXPublicKey(&publicKey)
+	if err != nil {
+		return
+	}
+
+	keyOut = bytes.NewBuffer(nil)
+	pem.Encode(keyOut, &pem.Block{Type: "PUBLIC KEY", Bytes: derText})
+	publicKeyBytes = keyOut.Bytes()
+
+	return
+}
+
+func GenerateKeyFile() error {
+	privateKeyBytes, publicKeyBytes, err := GenerateKey()
+
+	privateFile, err := os.Create("private.pem")
+	if err != nil {
+		return err
+	}
+	defer privateFile.Close()
+	_, err = privateFile.Write(privateKeyBytes)
+	if err != nil {
+		return err
+	}
+
+	publicFile, err := os.Create("public.pem")
+	if err != nil {
+		return err
+	}
+	defer publicFile.Close()
+	_, err = publicFile.Write(publicKeyBytes)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

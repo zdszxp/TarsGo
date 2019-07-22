@@ -1,7 +1,9 @@
 package tls
 
-import "testing"
-
+import (
+	"testing"
+	"io/ioutil"
+)
 func TestReadPKCS8PrivateKey(t *testing.T) {
 	const text = `-----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQge7zMZ+lq7I0nR4xP
@@ -108,4 +110,44 @@ gQIDAQAB
 		t.Fatal(err)
 	}
 
+}
+
+func TestGenerateKey(t *testing.T) {
+	GenerateKeyFile()
+
+	var err error
+    publicKey, err := ioutil.ReadFile("public.pem")
+    if err != nil {
+        t.Fatal(err)
+	}
+	
+	if key, err := readPublicKey(string(publicKey)); err != nil {
+		t.Fatal(err)
+	}else {
+		if key == nil {
+			t.Fatal("public key is nil")
+		}
+	}
+
+    privateKey, err := ioutil.ReadFile("private.pem")
+    if err != nil {
+        t.Fatal(err)
+	}
+	
+	if key, err := readPrivateKey(string(privateKey)); err != nil {
+		t.Fatal(err)
+	}else {
+		if key == nil {
+			t.Fatal("private key is nil")
+		}
+	}
+}
+
+func BenchmarkGenerateKey(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		_, _, err := GenerateKey()
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
 }
