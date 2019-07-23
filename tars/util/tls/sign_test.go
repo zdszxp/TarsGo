@@ -24,31 +24,31 @@ IZxWS5daT4gJTCzagSZG3FqTPHykr4GXXzT+o/aJlvKVXi7ksthSHOUmqQ==
 )
 
 func TestGenTokenAndVerfiy(t *testing.T) {
-	token, err := GenerateToken(privateKey, 1, "1")
+	token, err := GenerateToken(privateKey, "1", "1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = VerifyToken(publicKey, token, 1, "1")
+	err = VerifyToken(publicKey, token, "1", "1")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = VerifyToken(publicKey, token, 1, "2")
+	err = VerifyToken(publicKey, token, "1", "2")
 	if err != ErrorIdentifierNotMatch {
 		t.Fatal(err)
 	}
-	err = VerifyToken(publicKey, token, 2, "1")
+	err = VerifyToken(publicKey, token, "2", "1")
 	if err != ErrorAppIDNotMatch {
 		t.Fatal(err)
 	}
 }
 
 func TestGenAndVerifyExpire(t *testing.T) {
-	token, err := GenerateTokenWithExpire(privateKey, 1, "1", 0)
+	token, err := GenerateTokenWithExpire(privateKey, "1", "1", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(time.Duration(time.Second))
-	err = VerifyToken(publicKey, token, 1, "1")
+	err = VerifyToken(publicKey, token, "1", "1")
 	if err != ErrorExpired {
 		t.Fatal(err)
 	}
@@ -56,34 +56,34 @@ func TestGenAndVerifyExpire(t *testing.T) {
 
 func TestGenAndVerifyUserBuf(t *testing.T) {
 	buf := []byte{1, 2, 3}
-	token, err := GenerateTokenWithUserbuf(privateKey, 1, "1", 3600, buf)
+	token, err := GenerateTokenWithUserbuf(privateKey, "1", "1", 3600, buf)
 	if err != nil {
 		t.Fatal(err)
 	}
-	retBuf, err := VerifyTokenWithUserbuf(publicKey, token, 1, "1")
+	retBuf, err := VerifyTokenWithUserbuf(publicKey, token, "1", "1")
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !bytes.Equal(retBuf, buf) {
 		t.Fatal("user buf not equal")
 	}
-	_, err = VerifyTokenWithUserbuf(publicKey, token, 1, "2")
+	_, err = VerifyTokenWithUserbuf(publicKey, token, "1", "2")
 	if err != ErrorIdentifierNotMatch {
 		t.Fatal(err)
 	}
-	_, err = VerifyTokenWithUserbuf(publicKey, token, 2, "1")
+	_, err = VerifyTokenWithUserbuf(publicKey, token, "2", "1")
 	if err != ErrorAppIDNotMatch {
 		t.Fatal(err)
 	}
 }
 
 func TestGenAndVerifyUserBufExpire(t *testing.T) {
-	token, err := GenerateTokenWithUserbuf(privateKey, 1, "1", 0, []byte{1, 2, 3})
+	token, err := GenerateTokenWithUserbuf(privateKey, "1", "1", 0, []byte{1, 2, 3})
 	if err != nil {
 		t.Fatal(err)
 	}
 	time.Sleep(time.Duration(time.Second))
-	_, err = VerifyTokenWithUserbuf(publicKey, token, 1, "1")
+	_, err = VerifyTokenWithUserbuf(publicKey, token, "1", "1")
 	if err != ErrorExpired {
 		t.Fatal(err)
 	}
@@ -95,7 +95,7 @@ func TestVerifyExistToken(t *testing.T) {
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEmAeEcipI6pcgR+egd5GM6F35XveJ
 agHwdlx2f4PkTdGBzLOfMyU52lDF8ZFg00EE06QyQ7nB1GsZyXVKBkRGrg==
 -----END PUBLIC KEY-----`
-	err := VerifyToken(pubkey, token, 1, "1")
+	err := VerifyToken(pubkey, token, "1", "1")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ agHwdlx2f4PkTdGBzLOfMyU52lDF8ZFg00EE06QyQ7nB1GsZyXVKBkRGrg==
 
 func BenchmarkGenerateToken(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_, err := GenerateToken(privateKey, 1, "1")
+		_, err := GenerateToken(privateKey, "1", "1")
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -112,13 +112,13 @@ func BenchmarkGenerateToken(b *testing.B) {
 
 func BenchmarkVerifyToken(b *testing.B) {
 	b.StopTimer()
-	sig, err := GenerateToken(privateKey, 1, "1")
+	sig, err := GenerateToken(privateKey, "1", "1")
 	if err != nil {
 		b.Fatal(err)
 	}
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		err = VerifyToken(publicKey, sig, 1, "1")
+		err = VerifyToken(publicKey, sig, "1", "1")
 		if err != nil {
 			b.Fatal(err)
 		}
