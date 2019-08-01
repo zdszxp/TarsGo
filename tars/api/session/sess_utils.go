@@ -15,7 +15,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/astaxie/beego/utils"
+	"github.com/TarsCloud/TarsGo/tars/util"
 )
 
 func init() {
@@ -59,7 +59,7 @@ func DecodeGob(encoded []byte) (map[interface{}]interface{}, error) {
 func generateRandomKey(strength int) []byte {
 	k := make([]byte, strength)
 	if n, err := io.ReadFull(rand.Reader, k); n != strength || err != nil {
-		return utils.RandomCreateBytes(strength)
+		return util.RandomCreateBytes(strength)
 	}
 	return k
 }

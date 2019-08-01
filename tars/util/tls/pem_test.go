@@ -113,9 +113,16 @@ gQIDAQAB
 }
 
 func TestGenerateKey(t *testing.T) {
-	GenerateKeyFile()
+	privateKeyBytes, publicKeyBytes, err := GenerateKey()
+	if err != nil {
+        t.Fatal(err)
+	}
 
-	var err error
+	err = GenerateKeyFile(privateKeyBytes, publicKeyBytes)
+	if err != nil {
+        t.Fatal(err)
+	}
+
     publicKey, err := ioutil.ReadFile("public.pem")
     if err != nil {
         t.Fatal(err)

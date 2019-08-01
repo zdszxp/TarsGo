@@ -61,8 +61,9 @@ type TarsServer struct {
 	isClosed   bool
 	numInvoke  int32
 
-	TCPConnConnectHandler func (*net.TCPConn) session.Session
-	TCPConnDisconnectHandler func (*net.TCPConn)
+	OnConnConnectHandler func (net.Conn) session.Session
+	OnConnDisconnectHandler func (net.Conn)
+	OnConnErrorHandler func (net.Conn, error) bool
 }
 
 //NewTarsServer new TarsServer and init with conf.

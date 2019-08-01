@@ -83,38 +83,37 @@ func GenerateKey() (privateKeyBytes, publicKeyBytes []byte, err error) {
 		return
 	}
 
-	derText, err := x509.MarshalECPrivateKey(privateKey)
+	derStream, err := x509.MarshalECPrivateKey(privateKey)
 	if err != nil {
 		return
 	}
 
 	keyOut := bytes.NewBuffer(nil)
-	pem.Encode(keyOut, &pem.Block{Type: "EC PRIVATE KEY", Bytes: derText})
+	pem.Encode(keyOut, &pem.Block{Type: "EC PRIVATE KEY", Bytes: derStream})
 	privateKeyBytes = keyOut.Bytes()
 
 	//public key
 	publicKey := privateKey.PublicKey
 
-	derText, err = x509.MarshalPKIXPublicKey(&publicKey)
+	derStream, err = x509.MarshalPKIXPublicKey(&publicKey)
 	if err != nil {
 		return
 	}
 
 	keyOut = bytes.NewBuffer(nil)
-	pem.Encode(keyOut, &pem.Block{Type: "PUBLIC KEY", Bytes: derText})
+	pem.Encode(keyOut, &pem.Block{Type: "PUBLIC KEY", Bytes: derStream})
 	publicKeyBytes = keyOut.Bytes()
 
 	return
 }
 
-func GenerateKeyFile() error {
-	privateKeyBytes, publicKeyBytes, err := GenerateKey()
-
+func GenerateKeyFile(privateKeyBytes, publicKeyBytes []byte) error {
 	privateFile, err := os.Create("private.pem")
 	if err != nil {
 		return err
 	}
 	defer privateFile.Close()
+
 	_, err = privateFile.Write(privateKeyBytes)
 	if err != nil {
 		return err
@@ -125,6 +124,7 @@ func GenerateKeyFile() error {
 		return err
 	}
 	defer publicFile.Close()
+	
 	_, err = publicFile.Write(publicKeyBytes)
 	if err != nil {
 		return err

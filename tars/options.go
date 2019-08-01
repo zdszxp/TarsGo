@@ -61,7 +61,7 @@ func ConfigureWithConfigs(configs map[string]string) {
 					TLOG.Errorf("connect broker[%v] error: %v", err)
 					return err
 				} else {
-					TLOG.Debug("connect broker[%v] successfully")
+					TLOG.Debugf("connect broker[%v] successfully", brokerConfig)
 				}
 
 				return nil

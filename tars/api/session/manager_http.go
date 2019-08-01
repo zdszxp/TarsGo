@@ -126,7 +126,7 @@ func (manager *ManagerHttp) getSid(r *http.Request) (string, error) {
 
 // SessionStart generate or read the session id from http request.
 // if session id exists, return SessionStore with this id.
-func (manager *ManagerHttp) SessionStart(w http.ResponseWriter, r *http.Request) (session Store, err error) {
+func (manager *ManagerHttp) SessionStart(w http.ResponseWriter, r *http.Request) (session Session, err error) {
 	sid, errs := manager.getSid(r)
 	if errs != nil {
 		return nil, errs
@@ -198,8 +198,8 @@ func (manager *ManagerHttp) SessionDestroy(w http.ResponseWriter, r *http.Reques
 }
 
 // GetSessionStore Get SessionStore by its id.
-func (manager *ManagerHttp) GetSessionStore(sid string) (sessions Store, err error) {
-	sessions, err = manager.provider.SessionRead(sid)
+func (manager *ManagerHttp) GetSessionStore(sid string) (session Session, err error) {
+	session, err = manager.provider.SessionRead(sid)
 	return
 }
 
@@ -211,7 +211,7 @@ func (manager *ManagerHttp) GC() {
 }
 
 // SessionRegenerateID Regenerate a session id for this SessionStore who's id is saving in http request.
-func (manager *ManagerHttp) SessionRegenerateID(w http.ResponseWriter, r *http.Request) (session Store) {
+func (manager *ManagerHttp) SessionRegenerateID(w http.ResponseWriter, r *http.Request) (session Session) {
 	sid, err := manager.sessionID()
 	if err != nil {
 		return

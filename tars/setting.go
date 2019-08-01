@@ -17,9 +17,9 @@ const (
 
 	//AcceptTimeout accept timeout
 	AcceptTimeout time.Duration = 500 * time.Millisecond
-	//ReadTimeout zero for not set read deadline for Conn (better  performance)
+	//ReadTimeout zero for not set read deadline for Conn (better performance;A zero value means Read will not time out)
 	ReadTimeout time.Duration = 0 * time.Millisecond
-	//WriteTimeout zero for not set write deadline for Conn (better performance)
+	//WriteTimeout zero for not set write deadline for Conn (better performance;A zero value means Write will not time out)
 	WriteTimeout time.Duration = 0 * time.Millisecond
 	//HandleTimeout zero for not set deadline for invoke user interface (better performance)
 	HandleTimeout time.Duration = 0 * time.Millisecond

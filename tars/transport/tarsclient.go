@@ -126,7 +126,7 @@ func (c *connection) recv(conn net.Conn) {
 				continue // no data, not error
 			}
 			if _, ok := err.(*net.OpError); ok {
-				TLOG.Error("netOperror", conn.RemoteAddr())
+				TLOG.Error("netOperror ", conn.RemoteAddr())
 				c.close(conn)
 				return // connection is closed
 			}

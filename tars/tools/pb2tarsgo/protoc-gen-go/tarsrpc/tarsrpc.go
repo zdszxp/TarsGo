@@ -216,6 +216,7 @@ func (t *tarsrpc) generateDispatch(service *pb.ServiceDescriptorProto) {
 			if err != nil {
 				return err
 			}
+			req.Context["Message"] = proto.MessageName(&res)
 		`, method.GetName(), t.typeName(method.GetInputType()), upperFirstLatter(method.GetName())))
 	}
 	t.P(`default:

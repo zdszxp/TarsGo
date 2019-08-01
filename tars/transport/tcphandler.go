@@ -44,6 +44,7 @@ func (h *tcpHandler) handleConn(conn *net.TCPConn, pkg []byte) {
 		ctx := context.Background()
 		remoteAddr := conn.RemoteAddr().String()
 		ipPort := strings.Split(remoteAddr, ":")
+		ctx = contextWithNetConn(ctx, net.Conn(conn))
 		ctx = current.ContextWithTarsCurrent(ctx)
 		ok := current.SetClientIPWithContext(ctx, ipPort[0])
 		if !ok {
@@ -85,8 +86,8 @@ func (h *tcpHandler) Handle() error {
 			continue
 		}
 
-		if h.ts.TCPConnConnectHandler != nil {
-			h.ts.TCPConnConnectHandler(conn)
+		if h.ts.OnConnConnectHandler != nil {
+			h.ts.OnConnConnectHandler(conn)
 		}
 
 		go func(conn *net.TCPConn) {
@@ -98,8 +99,8 @@ func (h *tcpHandler) Handle() error {
 			h.recv(conn)
 			atomic.AddInt32(&h.acceptNum, -1)
 
-			if h.ts.TCPConnDisconnectHandler != nil {
-				h.ts.TCPConnDisconnectHandler(conn)
+			if h.ts.OnConnDisconnectHandler != nil {
+				h.ts.OnConnDisconnectHandler(conn)
 			}
 		}(conn)
 	}
@@ -127,6 +128,11 @@ func (h *tcpHandler) recv(conn *net.TCPConn) {
 				return
 			}
 			h.idleTime = time.Now()
+
+			if h.ts.OnConnErrorHandler != nil && h.ts.OnConnErrorHandler(conn, err) {
+				return
+			}
+
 			if isNoDataError(err) {
 				continue
 			}
