@@ -119,6 +119,15 @@ func newOptions(opts ...Option) *Options {
 	return opt
 }
 
+func AppendOptions(opts ...Option) {
+	opt := getOptions()
+	for _, o := range opts {
+		o(opt)
+	}
+
+	return
+}
+
 func (o *Options) Store() store.Store {
 	return o.store
 }
