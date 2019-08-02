@@ -91,6 +91,7 @@ func (c *connection) send(conn net.Conn) {
 			// TODO: check one-way invoke for idle detect
 			if c.invokeNum == 0 && c.idleTime.Add(c.tc.conf.IdleTimeout).Before(time.Now()) {
 				c.close(conn)
+				TLOG.Debug("close IdleTimeout ")
 				return
 			}
 			continue
@@ -126,7 +127,7 @@ func (c *connection) recv(conn net.Conn) {
 				continue // no data, not error
 			}
 			if _, ok := err.(*net.OpError); ok {
-				TLOG.Error("netOperror ", conn.RemoteAddr())
+				TLOG.Errorf("netOperror %v %v", conn.RemoteAddr(), err)
 				c.close(conn)
 				return // connection is closed
 			}
