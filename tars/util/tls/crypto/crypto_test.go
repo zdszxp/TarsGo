@@ -13,7 +13,7 @@ func TestAESCipher(t *testing.T){
 	testCipher(t, typ, key)
 }
 
-func testCipher(t *testing.T, typ string, keys... []byte) {
+func testCipher(t *testing.T, typ string, keys ...[]byte) {
 	cipher, err := NewCipher(typ, keys[0], nil)
 	if err != nil {
 		t.Fatal(err)
