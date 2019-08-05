@@ -11,7 +11,7 @@ var (
 	DefaultMaxIdle        = 5
 	DefaultIdleTimeout    = 2 * time.Minute
 	DefaultConnectTimeout = 5 * time.Second
-	DefaultReadTimeout    = 5 * time.Second
+	DefaultReadTimeout    = time.Duration(0)
 	DefaultWriteTimeout   = 5 * time.Second
 
 	optionsKey = optionsKeyType{}
