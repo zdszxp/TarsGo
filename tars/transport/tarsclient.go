@@ -91,7 +91,7 @@ func (c *connection) send(conn net.Conn) {
 			// TODO: check one-way invoke for idle detect
 			if c.invokeNum == 0 && c.idleTime.Add(c.tc.conf.IdleTimeout).Before(time.Now()) {
 				c.close(conn)
-				TLOG.Debug("close IdleTimeout ")
+				TLOG.Debugf("close IdleTimeout %v", c.tc.conf.IdleTimeout)
 				return
 			}
 			continue

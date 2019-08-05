@@ -42,6 +42,7 @@ func (s *subscriberHelper) Subscribe(sb Subscriber) error {
 	if !ok {
 		return fmt.Errorf("invalid subscriber: expected *subscriber")
 	}
+	
 	if len(sub.handlers) == 0 {
 		return fmt.Errorf("invalid subscriber: no handler functions")
 	}

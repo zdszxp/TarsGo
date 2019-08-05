@@ -7,7 +7,7 @@ import (
 	"errors"
 )
 
-type ConnSet map[net.Conn]Conn
+type ConnSet map[string]Conn //net.Conn.RemoteAddr().String()-Conn
 
 type TCPConn struct {
 	sync.Mutex
