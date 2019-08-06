@@ -3,8 +3,6 @@ package tars
 import (
 	"context"
 	"sync"
-
-	"github.com/TarsCloud/TarsGo/tars/broker"
 )
 
 var brokerFHelperSingleton *brokerFHelper //Singleton
@@ -63,7 +61,7 @@ func newBrokerFHelper(opts ...BrokerOption) *brokerFHelper {
 	srv := &brokerFHelper{
 		opts: options,
 		subscriberHelper: subscriberHelper{
-			subscribers: make(map[*subscriber][]broker.Subscriber),
+			subscribers: make(map[string]*subscriber),
 			wg:          wait(options.Context),
 			opts:        &options,
 		},

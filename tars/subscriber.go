@@ -24,7 +24,7 @@ type subscriberHelper struct {
 	wg *sync.WaitGroup
 
 	// handlers    map[string]server.Handler
-	subscribers map[*subscriber][]broker.Subscriber
+	subscribers map[string]*subscriber
 	opts        *BrokerOptions
 }
 
@@ -35,6 +35,23 @@ func (s *subscriberHelper) RegisterSubscriber(topic string, h interface{}, opts 
 
 func (s *subscriberHelper) NewSubscriber(topic string, handler interface{}, opts ...SubscriberOption) Subscriber {
 	return newSubscriber(topic, handler, opts...)
+}
+
+func (s *subscriberHelper) Unsubscribe(topic string) error {
+	s.Lock()
+	defer s.Unlock()
+	
+	sub, ok := s.subscribers[topic]
+	if !ok {
+		return fmt.Errorf("subscriber %v not exists", topic)
+	}
+
+	for _, v := range sub.subscribers {
+		v.Unsubscribe()
+	}
+
+	delete(s.subscribers, topic)
+	return nil
 }
 
 func (s *subscriberHelper) Subscribe(sb Subscriber) error {
@@ -54,9 +71,9 @@ func (s *subscriberHelper) Subscribe(sb Subscriber) error {
 	s.Lock()
 	defer s.Unlock()
 
-	_, ok = s.subscribers[sub]
+	_, ok = s.subscribers[sub.topic]
 	if ok {
-		return fmt.Errorf("subscriber %v already exists", sub)
+		return fmt.Errorf("subscriber %v already exists", sub.topic)
 	}
 
 	handler := s.createSubHandler(sub, *s.opts)
@@ -73,7 +90,8 @@ func (s *subscriberHelper) Subscribe(sb Subscriber) error {
 	if err != nil {
 		return err
 	}
-	s.subscribers[sub] = []broker.Subscriber{bsub}
+	sub.subscribers = append(sub.subscribers, bsub)
+	s.subscribers[sub.topic] = sub
 
 	return nil
 }
@@ -101,6 +119,8 @@ type subscriber struct {
 	handlers   []*handler
 	//endpoints  []*registry.Endpoint
 	opts SubscriberOptions
+
+	subscribers []broker.Subscriber
 }
 
 func newSubscriber(topic string, sub interface{}, opts ...SubscriberOption) Subscriber {
