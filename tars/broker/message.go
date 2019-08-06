@@ -1,31 +1,39 @@
 package broker
 
 import (
-	//"github.com/micro/go-micro/client"
 )
 
-// type publication struct {
+// type event struct {
 // 	topic       string
 // 	contentType string
 // 	payload     interface{}
 // }
 
-// func NewPublication(topic string, payload interface{}, contentType string) Message {
-// 	return &publication{
+// func newEvent(topic string, payload interface{}, contentType string, opts ...client.MessageOption) client.Message {
+// 	var options client.MessageOptions
+// 	for _, o := range opts {
+// 		o(&options)
+// 	}
+
+// 	if len(options.ContentType) > 0 {
+// 		contentType = options.ContentType
+// 	}
+
+// 	return &event{
 // 		payload:     payload,
 // 		topic:       topic,
 // 		contentType: contentType,
 // 	}
 // }
 
-// func (p *publication) ContentType() string {
-// 	return p.contentType
+// func (g *event) ContentType() string {
+// 	return g.contentType
 // }
 
-// func (p *publication) Topic() string {
-// 	return p.topic
+// func (g *event) Topic() string {
+// 	return g.topic
 // }
 
-// func (p *publication) Payload() interface{} {
-// 	return p.payload
+// func (g *event) Payload() interface{} {
+// 	return g.payload
 // }

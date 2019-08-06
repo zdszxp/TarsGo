@@ -9,10 +9,11 @@ import (
 
 	"github.com/TarsCloud/TarsGo/tars/broker"
 	"github.com/TarsCloud/TarsGo/tars/codec/json"
+	//"github.com/TarsCloud/TarsGo/tars/config/cmd"
 	nats "github.com/nats-io/nats.go"
 )
 
-type natsBroker struct {
+type nbroker struct {
 	sync.RWMutex
 	addrs []string
 	conn  *nats.Conn
@@ -32,35 +33,38 @@ type publication struct {
 	m *broker.Message
 }
 
-func (p *publication) Topic() string {
-	return p.t
+func init() {
+	//cmd.DefaultBrokers["nats"] = NewBroker
 }
 
-func (p *publication) Message() *broker.Message {
-	return p.m
+func (n *publication) Topic() string {
+	return n.t
 }
 
-func (p *publication) Ack() error {
-	// nats does not support acking
+func (n *publication) Message() *broker.Message {
+	return n.m
+}
+
+func (n *publication) Ack() error {
 	return nil
 }
 
-func (s *subscriber) Options() broker.SubscribeOptions {
-	return s.opts
+func (n *subscriber) Options() broker.SubscribeOptions {
+	return n.opts
 }
 
-func (s *subscriber) Topic() string {
-	return s.s.Subject
+func (n *subscriber) Topic() string {
+	return n.s.Subject
 }
 
-func (s *subscriber) Unsubscribe() error {
-	if s.drain {
-		return s.s.Drain()
+func (n *subscriber) Unsubscribe() error {
+	if n.drain {
+		return n.s.Drain()
 	}
-	return s.s.Unsubscribe()
+	return n.s.Unsubscribe()
 }
 
-func (n *natsBroker) Address() string {
+func (n *nbroker) Address() string {
 	if n.conn != nil && n.conn.IsConnected() {
 		return n.conn.ConnectedUrl()
 	}
@@ -88,7 +92,7 @@ func setAddrs(addrs []string) []string {
 	return cAddrs
 }
 
-func (n *natsBroker) Connect() error {
+func (n *nbroker) Connect() error {
 	n.Lock()
 	defer n.Unlock()
 
@@ -120,7 +124,7 @@ func (n *natsBroker) Connect() error {
 	}
 }
 
-func (n *natsBroker) Disconnect() error {
+func (n *nbroker) Disconnect() error {
 	n.RLock()
 	if n.drain {
 		n.conn.Drain()
@@ -131,7 +135,7 @@ func (n *natsBroker) Disconnect() error {
 	return nil
 }
 
-func (n *natsBroker) Init(opts ...broker.Option) error {
+func (n *nbroker) Init(opts ...broker.Option) error {
 	for _, o := range opts {
 		o(&n.opts)
 	}
@@ -139,11 +143,11 @@ func (n *natsBroker) Init(opts ...broker.Option) error {
 	return nil
 }
 
-func (n *natsBroker) Options() broker.Options {
+func (n *nbroker) Options() broker.Options {
 	return n.opts
 }
 
-func (n *natsBroker) Publish(topic string, msg *broker.Message, opts ...broker.PublishOption) error {
+func (n *nbroker) Publish(topic string, msg *broker.Message, opts ...broker.PublishOption) error {
 	b, err := n.opts.Codec.Marshal(msg)
 	if err != nil {
 		return err
@@ -153,7 +157,7 @@ func (n *natsBroker) Publish(topic string, msg *broker.Message, opts ...broker.P
 	return n.conn.Publish(topic, b)
 }
 
-func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...broker.SubscribeOption) (broker.Subscriber, error) {
+func (n *nbroker) Subscribe(topic string, handler broker.Handler, opts ...broker.SubscribeOption) (broker.Subscriber, error) {
 	if n.conn == nil {
 		return nil, errors.New("not connected")
 	}
@@ -196,7 +200,7 @@ func (n *natsBroker) Subscribe(topic string, handler broker.Handler, opts ...bro
 	return &subscriber{s: sub, opts: opt, drain: drain}, nil
 }
 
-func (n *natsBroker) String() string {
+func (n *nbroker) String() string {
 	return "nats"
 }
 
@@ -236,10 +240,12 @@ func NewBroker(opts ...broker.Option) broker.Broker {
 		options.TLSConfig = natsOpts.TLSConfig
 	}
 
-	return &natsBroker{
+	nb := &nbroker{
 		opts:  options,
 		nopts: natsOpts,
 		addrs: setAddrs(options.Addrs),
 		drain: drain,
 	}
+
+	return nb
 }

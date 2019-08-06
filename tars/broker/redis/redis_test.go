@@ -50,13 +50,13 @@ func TestBroker(t *testing.T) {
 	msgs := make(chan string, 10)
 
 	go func() {
-		s1 := subscribe(t, b, "test", func(p broker.Publication) error {
+		s1 := subscribe(t, b, "test", func(p broker.Event) error {
 			m := p.Message()
 			msgs <- fmt.Sprintf("s1:%s", string(m.Body))
 			return nil
 		})
 
-		s2 := subscribe(t, b, "test", func(p broker.Publication) error {
+		s2 := subscribe(t, b, "test", func(p broker.Event) error {
 			m := p.Message()
 			msgs <- fmt.Sprintf("s2:%s", string(m.Body))
 			return nil

@@ -54,14 +54,14 @@ func ConfigureWithConfigs(configs map[string]string) {
 					TLOG.Errorf("init broker error: %v", err)
 					return err
 				} else {
-					TLOG.Debug("init broker successfully")
+					TLOG.Debugf("Broker [%s] init successfully", b.String())
 				}
 
 				if err = b.Connect(); err != nil {
 					TLOG.Errorf("connect broker[%v] error: %v", err)
 					return err
 				} else {
-					TLOG.Debugf("connect broker[%v] successfully", brokerConfig)
+					TLOG.Debugf("Broker Listening on [%s]", brokerConfig)
 				}
 
 				return nil

@@ -40,7 +40,7 @@ func (s *subscriberHelper) NewSubscriber(topic string, handler interface{}, opts
 func (s *subscriberHelper) Unsubscribe(topic string) error {
 	s.Lock()
 	defer s.Unlock()
-	
+
 	sub, ok := s.subscribers[topic]
 	if !ok {
 		return fmt.Errorf("subscriber %v not exists", topic)
@@ -256,7 +256,7 @@ func validateSubscriber(sub Subscriber) error {
 }
 
 func (s *subscriberHelper) createSubHandler(sb *subscriber, opts BrokerOptions) broker.Handler {
-	return func(p broker.Publication) error {
+	return func(p broker.Event) error {
 		msg := p.Message()
 
 		// get codec
@@ -305,7 +305,7 @@ func (s *subscriberHelper) createSubHandler(sb *subscriber, opts BrokerOptions) 
 			co := cf(b)
 			defer co.Close()
 
-			if err := co.ReadHeader(&codec.Message{}, codec.Publication); err != nil {
+			if err := co.ReadHeader(&codec.Message{}, codec.Event); err != nil {
 				return err
 			}
 

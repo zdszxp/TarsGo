@@ -94,7 +94,7 @@ func (bh *brokerFHelper) Publish(ctx context.Context, contentType string, topic 
 	b := &buffer{bytes.NewBuffer(nil)}
 	if err := cf(b).Write(&codec.Message{
 		Target: topic,
-		Type:   codec.Publication,
+		Type:   codec.Event,
 		Header: map[string]string{
 			"Tars-Id":    id,
 			"Tars-Topic": topic,

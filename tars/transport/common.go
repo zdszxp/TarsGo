@@ -5,6 +5,7 @@ import(
 	"errors"
 	"context"
 	"strings"
+	"fmt"
 ) 
 
 func isNoDataError(err error) bool {
@@ -80,4 +81,19 @@ func GetNetConnFromContext(ctx context.Context) (net.Conn, error) {
 
 func contextWithNetConn(ctx context.Context, conn net.Conn) context.Context {
 	return context.WithValue(ctx, connKey, conn)
+}
+
+// HostPort format addr and port suitable for dial
+func HostPort(addr string, port interface{}) string {
+	host := addr
+	if strings.Count(addr, ":") > 0 {
+		host = fmt.Sprintf("[%s]", addr)
+	}
+	// TODO check for NATS case
+	if v, ok := port.(string); ok {
+		if v == "" {
+			return fmt.Sprintf("%s", host)
+		}
+	}
+	return fmt.Sprintf("%s:%v", host, port)
 }

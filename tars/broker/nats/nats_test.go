@@ -38,7 +38,7 @@ var addrTestCases = []struct {
 		"default",
 		"check if default Address is set correctly",
 		map[string]string{
-			"nats://localhost:4222": "",
+			"nats://127.0.0.1:4222": "",
 		},
 	},
 }
@@ -75,9 +75,9 @@ func TestInitAddrs(t *testing.T) {
 				br.Init()
 			}
 
-			natsBroker, ok := br.(*natsBroker)
+			natsBroker, ok := br.(*nbroker)
 			if !ok {
-				t.Fatal("Expected broker to be of types *natsBroker")
+				t.Fatal("Expected broker to be of types *nbroker")
 			}
 			// check if the same amount of addrs we set has actually been set, default
 			// have only 1 address nats://127.0.0.1:4222 (current nats code) or
