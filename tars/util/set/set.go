@@ -68,3 +68,8 @@ func (s *Set) Has(e interface{}) bool {
 	}
 	return false
 }
+
+func (s *Set) Range(f func(key, value interface{}) bool) {
+	s.el.Range(f)
+}
+

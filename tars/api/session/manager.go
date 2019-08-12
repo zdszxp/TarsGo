@@ -1,7 +1,7 @@
 package session
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"fmt"
 )
 
@@ -40,7 +40,7 @@ func (manager *manager) GetProvider() Provider {
 
 func (m *manager) GetSession(sid string) (s Session, err error) {
 	if m.provider.SessionExist(sid) == false {
-		return nil, fmt.Errorf("%v not exist", sid)
+		return nil, errors.Errorf("%v not exist", sid)
 	}
 
 	return m.provider.SessionRead(sid)
@@ -48,7 +48,7 @@ func (m *manager) GetSession(sid string) (s Session, err error) {
 
 func (m *manager) AddSession(sid string) (s Session, err error) {
 	if m.provider.SessionExist(sid) {
-		return nil, fmt.Errorf("%v exists", sid)
+		return nil, errors.Errorf("%v exists", sid)
 	}
 
 	return m.provider.SessionRegenerate(sid, sid)//reset expire

@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package tars.broker;
+
+// broker event
+message Event {
+	//the event name or topic e.g login
+	string name = 1;
+
+	// event headers
+    map<string, bytes> header = 4;
+
+	// the event data  e.g proto.marshal data
+	bytes data = 2;
+}

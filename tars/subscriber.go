@@ -9,10 +9,14 @@ import (
 	"sync"
 	"unicode"
 	"unicode/utf8"
-
+	"github.com/pkg/errors"
 	"github.com/TarsCloud/TarsGo/tars/broker"
 	"github.com/TarsCloud/TarsGo/tars/codec"
 	"github.com/TarsCloud/TarsGo/tars/metadata"
+)
+
+var (
+	ErrBrokerTopicExists = errors.New("topic exists")
 )
 
 const (
@@ -30,7 +34,16 @@ type subscriberHelper struct {
 
 // RegisterSubscriber is syntactic sugar for registering a subscriber
 func (s *subscriberHelper) RegisterSubscriber(topic string, h interface{}, opts ...SubscriberOption) error {
-	return s.Subscribe(newSubscriber(topic, h, opts...))
+	s.Lock()
+	_, ok := s.subscribers[topic]
+	if ok {
+		return ErrBrokerTopicExists
+	}
+	s.Unlock()
+
+	//TLOG.Debugf("Subscrib topic %v", topic)
+	subscriber := newSubscriber(topic, h, opts...)
+	return s.Subscribe(subscriber)
 }
 
 func (s *subscriberHelper) NewSubscriber(topic string, handler interface{}, opts ...SubscriberOption) Subscriber {
@@ -73,7 +86,7 @@ func (s *subscriberHelper) Subscribe(sb Subscriber) error {
 
 	_, ok = s.subscribers[sub.topic]
 	if ok {
-		return fmt.Errorf("subscriber %v already exists", sub.topic)
+		return ErrBrokerTopicExists
 	}
 
 	handler := s.createSubHandler(sub, *s.opts)
