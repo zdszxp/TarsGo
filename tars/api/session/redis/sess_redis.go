@@ -1,7 +1,7 @@
 package redis
 
 import (
-	"net/http"
+	//"net/http"
 	"strconv"
 	"strings"
 	"sync"
@@ -66,7 +66,7 @@ func (rs *SessionStore) SessionID() string {
 }
 
 // SessionRelease save session values to redis
-func (rs *SessionStore) SessionRelease(w http.ResponseWriter) {
+func (rs *SessionStore) SessionRelease() {
 	b, err := session.EncodeGob(rs.values)
 	if err != nil {
 		return

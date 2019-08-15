@@ -2,7 +2,7 @@ package session
 
 import (
 	"container/list"
-	"net/http"
+	//"net/http"
 	"sync"
 	"time"
 )
@@ -58,7 +58,7 @@ func (st *MemSessionStore) SessionID() string {
 }
 
 // SessionRelease Implement method, no used.
-func (st *MemSessionStore) SessionRelease(w http.ResponseWriter) {
+func (st *MemSessionStore) SessionRelease() {
 }
 
 // MemProvider Implement the provider interface

@@ -2,7 +2,7 @@ package session
 
 import (
 	"fmt"
-	"net/http"
+	//"net/http"
 )
 
 // Store contains all data for one session process with specific id.
@@ -11,7 +11,7 @@ type Session interface {
 	Get(key interface{}) interface{}      //get session value
 	Delete(key interface{}) error         //delete session value
 	SessionID() string                    //back current sessionID
-	SessionRelease(w http.ResponseWriter) // release the resource & save data to provider & return the data
+	SessionRelease() // release the resource & save data to provider & return the data
 	Flush() error                         //delete all data
 }
 

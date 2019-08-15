@@ -5,12 +5,16 @@ import (
 	"fmt"
 )
 
+var (
+	ErrNotFound = errors.New("not found")	
+)
+
 const Maxlifetime = 60*60*24
 
 type Manager interface {
 	GetSession(sid string) (s Session, err error)
-	AddSession(sid string) (s Session, err error)
-	DelSession(sid string) error
+	SessionStart(sid string) (s Session, err error)
+	SessionDestroy(sid string) error
 }
 
 func NewManager(provideName string, providerConfig string) (Manager, error) {
@@ -40,23 +44,28 @@ func (manager *manager) GetProvider() Provider {
 
 func (m *manager) GetSession(sid string) (s Session, err error) {
 	if m.provider.SessionExist(sid) == false {
-		return nil, errors.Errorf("%v not exist", sid)
+		return nil, ErrNotFound
 	}
 
 	return m.provider.SessionRead(sid)
 }
 
-func (m *manager) AddSession(sid string) (s Session, err error) {
-	if m.provider.SessionExist(sid) {
-		return nil, errors.Errorf("%v exists", sid)
+func (m *manager) SessionStart(sid string) (s Session, err error) {
+	if sid != "" && m.provider.SessionExist(sid) {
+		return m.provider.SessionRead(sid)
 	}
 
-	return m.provider.SessionRegenerate(sid, sid)//reset expire
+	s, err = m.provider.SessionRead(sid)
+	if err != nil {
+		return nil, err
+	}
+
+	return
 }
 
-func (m *manager) DelSession(sid string) error {
+func (m *manager) SessionDestroy(sid string) error {
 	if m.provider == nil {
-		return errors.New("DelSession: provider == nil")
+		return errors.New("SessionDestroy: provider == nil")
 	}
 
 	return m.provider.SessionDestroy(sid)

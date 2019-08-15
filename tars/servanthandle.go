@@ -59,3 +59,13 @@ func AddHttpServant(mux *TarsHttpMux, obj string) {
 	s := &http.Server{Addr: cfg.Address, Handler: mux}
 	httpSvrs[obj] = s
 }
+
+func GetServantAddress(obj string) string {
+	cfg, ok := tarsConfig[obj]
+	if !ok {
+		TLOG.Debug("servant obj name not found ", obj)
+		return ""
+	}
+
+	return cfg.Address
+}
