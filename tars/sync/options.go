@@ -3,6 +3,7 @@ package sync
 import (
 	"github.com/TarsCloud/TarsGo/tars/data/store"
 	"github.com/TarsCloud/TarsGo/tars/sync/lock"
+	"github.com/TarsCloud/TarsGo/tars/sync/time"
 )
 
 // WithLock sets the locking implementation option
