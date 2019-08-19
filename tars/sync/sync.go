@@ -2,11 +2,8 @@
 package sync
 
 import (
-	"github.com/micro/go-micro/data/store"
-	"github.com/micro/go-micro/sync/leader"
-	"github.com/micro/go-micro/sync/lock"
-	"github.com/micro/go-micro/sync/task"
-	"github.com/micro/go-micro/sync/time"
+	"github.com/TarsCloud/TarsGo/tars/data/store"
+	"github.com/TarsCloud/TarsGo/tars/sync/lock"
 )
 
 // Map provides synchronized access to key-value storage.
@@ -23,18 +20,9 @@ type Map interface {
 	Iterate(func(key, val interface{}) error) error
 }
 
-// Cron is a distributed scheduler using leader election
-// and distributed task runners. It uses the leader and
-// task interfaces.
-type Cron interface {
-	Schedule(task.Schedule, task.Command) error
-}
-
 type Options struct {
-	Leader leader.Leader
 	Lock   lock.Lock
 	Store  store.Store
-	Task   task.Task
 	Time   time.Time
 }
 

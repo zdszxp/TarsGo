@@ -1,18 +1,9 @@
 package sync
 
 import (
-	"github.com/micro/go-micro/data/store"
-	"github.com/micro/go-micro/sync/leader"
-	"github.com/micro/go-micro/sync/lock"
-	"github.com/micro/go-micro/sync/time"
+	"github.com/TarsCloud/TarsGo/tars/data/store"
+	"github.com/TarsCloud/TarsGo/tars/sync/lock"
 )
-
-// WithLeader sets the leader election implementation opton
-func WithLeader(l leader.Leader) Option {
-	return func(o *Options) {
-		o.Leader = l
-	}
-}
 
 // WithLock sets the locking implementation option
 func WithLock(l lock.Lock) Option {

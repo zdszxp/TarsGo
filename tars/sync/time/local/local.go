@@ -4,7 +4,7 @@ package local
 import (
 	gotime "time"
 
-	"github.com/micro/go-micro/sync/time"
+	"github.com/TarsCloud/TarsGo/tars/sync/time"
 )
 
 type Time struct{}
