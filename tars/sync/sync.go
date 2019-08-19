@@ -4,6 +4,7 @@ package sync
 import (
 	"github.com/TarsCloud/TarsGo/tars/data/store"
 	"github.com/TarsCloud/TarsGo/tars/sync/lock"
+	"github.com/TarsCloud/TarsGo/tars/sync/time"
 )
 
 // Map provides synchronized access to key-value storage.
