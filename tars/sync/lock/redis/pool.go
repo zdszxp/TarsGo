@@ -19,7 +19,7 @@ func (p *pool) Get() redis.Conn {
 		p.i++
 		p.Unlock()
 
-		c, err := redis.Dial("tcp", addr)
+		c, err := redis.DialURL(addr)
 		if err != nil {
 			continue
 		}

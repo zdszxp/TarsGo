@@ -4,8 +4,13 @@ import (
 	"context"
 	"strings"
 
+	"github.com/TarsCloud/TarsGo/tars/sync"
+	"github.com/TarsCloud/TarsGo/tars/sync/lock"
+	redisLock "github.com/TarsCloud/TarsGo/tars/sync/lock/redis"
+
 	"github.com/TarsCloud/TarsGo/tars/broker"
 	"github.com/TarsCloud/TarsGo/tars/broker/redis"
+
 	"github.com/TarsCloud/TarsGo/tars/data/store"
 	"github.com/TarsCloud/TarsGo/tars/data/store/memory"
 	redisStore "github.com/TarsCloud/TarsGo/tars/data/store/redis"
@@ -23,11 +28,7 @@ func ConfigureWithConfigs(configs map[string]string) {
 	storeConfig := configs["store"]
 	if len(storeConfig) > 0 {
 		if strings.HasPrefix(storeConfig, "redis") {
-			var rawurl string
-			if strings.HasPrefix(storeConfig, "redis"+"@") {
-				rawurl = strings.TrimPrefix(storeConfig, "redis"+"@")
-			}
-
+			rawurl := strings.TrimPrefix(storeConfig, "redis"+"@")
 			opts = append(opts, Store(redisStore.NewStore(store.Nodes(rawurl))))
 		} else if strings.HasPrefix(storeConfig, "memory") {
 			opts = append(opts, Store(memory.NewStore()))
@@ -38,11 +39,7 @@ func ConfigureWithConfigs(configs map[string]string) {
 	if len(brokerConfig) > 0 {
 		var b broker.Broker
 		if strings.HasPrefix(brokerConfig, "redis") {
-			var rawurl string
-			if strings.HasPrefix(brokerConfig, "redis"+"@") {
-				rawurl = strings.TrimPrefix(brokerConfig, "redis"+"@")
-			}
-
+			rawurl := strings.TrimPrefix(brokerConfig, "redis"+"@")
 			b = redis.NewBroker(broker.Addrs(rawurl))
 		}
 
@@ -81,6 +78,18 @@ func ConfigureWithConfigs(configs map[string]string) {
 		}
 	}
 
+	var syncOpts sync.Options
+	lockConfig := configs["lock"]
+	if len(lockConfig) > 0 {
+		if strings.HasPrefix(lockConfig, "redis") {
+			rawurl := strings.TrimPrefix(lockConfig, "redis"+"@")
+
+			syncOpts.Lock = redisLock.NewLock(lock.Nodes(rawurl))
+		} //else if strings.HasPrefix(lockConfig, "") {}
+	}
+
+	opts = append(opts, SyncOptions(&syncOpts))
+
 	configure(opts...)
 }
 
@@ -91,6 +100,7 @@ func configure(opts ...Option) {
 type Option func(*Options)
 
 type Options struct {
+	sync.Options
 	broker broker.Broker
 	store  store.Store
 
@@ -145,6 +155,16 @@ func (o *Options) Broker() broker.Broker {
 func Broker(b broker.Broker) Option {
 	return func(o *Options) {
 		o.broker = b
+	}
+}
+
+func (o *Options) Lock() lock.Lock {
+	return o.Options.Lock
+}
+
+func SyncOptions(opts *sync.Options) Option {
+	return func(o *Options) {
+		o.Options = *opts
 	}
 }
 
@@ -204,4 +224,13 @@ func GetStore() store.Store {
 	}
 
 	return opts.Store()
+}
+
+func GetLock() lock.Lock {
+	opts := getOptions()
+	if opts == nil {
+		return nil
+	}
+
+	return opts.Lock()
 }

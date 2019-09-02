@@ -146,6 +146,13 @@ func (c *connection) recv(conn net.Conn) {
 				break
 			}
 			if status == PACKAGE_FULL {
+				//check len
+				if pkgLen < 4 || pkgLen > MAX_TCP_PACKET_SIZE {
+					TLOG.Errorf("parse package error: pkgLen[%v] invalid", pkgLen)
+					c.close(conn)
+					return
+				}
+				
 				atomic.AddInt32(&c.invokeNum, -1)
 				pkg := make([]byte, pkgLen-4)
 				copy(pkg, currBuffer[4:pkgLen])

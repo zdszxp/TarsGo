@@ -13,6 +13,8 @@ import (
 	"github.com/TarsCloud/TarsGo/tars/util/gpool"
 )
 
+const MAX_TCP_PACKET_SIZE int = 65535 //64K
+
 type tcpHandler struct {
 	conf *TarsServerConf
 
@@ -150,6 +152,12 @@ func (h *tcpHandler) recv(conn *net.TCPConn) {
 				break
 			}
 			if status == PACKAGE_FULL {
+				//check len
+				if pkgLen < 4 || pkgLen > MAX_TCP_PACKET_SIZE {
+					TLOG.Errorf("parse package error: %s pkgLen[%v] invalid", conn.RemoteAddr(), pkgLen)
+					return
+				}
+
 				pkg := make([]byte, pkgLen-4)
 				copy(pkg, currBuffer[4:pkgLen])
 				currBuffer = currBuffer[pkgLen:]

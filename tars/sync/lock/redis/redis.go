@@ -5,9 +5,20 @@ import (
 	"errors"
 	"sync"
 	"time"
+	"strings"
 
 	"github.com/go-redsync/redsync"
+	"github.com/gomodule/redigo/redis"
 	"github.com/TarsCloud/TarsGo/tars/sync/lock"
+)
+
+var (
+	DefaultMaxActive      = 0
+	DefaultMaxIdle        = 5
+	DefaultIdleTimeout    = 2 * time.Minute
+	DefaultConnectTimeout = 5 * time.Second
+	DefaultReadTimeout    = 5 * time.Second
+	DefaultWriteTimeout   = 5 * time.Second
 )
 
 type redisLock struct {
@@ -82,9 +93,32 @@ func NewLock(opts ...lock.Option) lock.Lock {
 		nodes = []string{"127.0.0.1:6379"}
 	}
 
-	rpool := redsync.New([]redsync.Pool{&pool{
-		addrs: nodes,
-	}})
+	var pools []redsync.Pool
+	for _, addr := range nodes {
+		if !strings.HasPrefix(addr, "redis://") {
+			addr = "redis://" + addr
+		}
+
+		pools = append(pools, &redis.Pool{
+			MaxIdle:     DefaultMaxIdle,
+			MaxActive:   DefaultMaxActive,
+			IdleTimeout: DefaultIdleTimeout,
+			Dial: func() (redis.Conn, error) {
+				return redis.DialURL(
+					addr,
+					redis.DialConnectTimeout(DefaultConnectTimeout),
+					redis.DialReadTimeout(DefaultReadTimeout),
+					redis.DialWriteTimeout(DefaultWriteTimeout),
+				)
+			},
+			TestOnBorrow: func(c redis.Conn, t time.Time) error {
+				_, err := c.Do("PING")
+				return err
+			},
+		})
+	}
+
+	rpool := redsync.New(pools)
 
 	return &redisLock{
 		locks: make(map[string]*redsync.Mutex),
