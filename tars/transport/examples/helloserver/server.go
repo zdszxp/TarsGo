@@ -38,7 +38,7 @@ func (s *MyServer) ParsePackage(buff []byte) (pkgLen, status int) {
 }
 
 //InvokeTimeout how to detail with timeout package.
-func (s *MyServer) InvokeTimeout(pkg []byte) []byte {
+func (s *MyServer) InvokeTimeout(ctx context.Context, pkg []byte) []byte {
 	payload := []byte("timeout")
 	ret := make([]byte, 4+len(payload))
 	binary.BigEndian.PutUint32(pkg[:4], uint32(len(ret)))

@@ -92,7 +92,7 @@ func (s *TarsProtocol) ParsePackage(buff []byte) (int, int) {
 }
 
 //InvokeTimeout indicates how to deal with timeout.
-func (s *TarsProtocol) InvokeTimeout(pkg []byte) []byte {
+func (s *TarsProtocol) InvokeTimeout(ctx context.Context, pkg []byte) []byte {
 	rspPackage := requestf.ResponsePacket{}
 	rspPackage.IRet = 1
 	rspPackage.SResultDesc = "server invoke timeout"
