@@ -69,3 +69,12 @@ func GetServantAddress(obj string) string {
 
 	return cfg.Address
 }
+
+func GetServantConfig(obj string) *transport.TarsServerConf {
+	cfg, ok := tarsConfig[obj]
+	if !ok {
+		return nil
+	}
+
+	return cfg
+}
