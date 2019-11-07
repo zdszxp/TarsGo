@@ -1,8 +1,6 @@
 package redis
 
 import (
-	//"net/http"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -80,77 +78,46 @@ func (rs *SessionStore) SessionRelease() {
 type Provider struct {
 	maxlifetime int64
 	savePath    string
-	poolsize    int
-	password    string
-	dbNum       int
+	//poolsize    int
+	//password    string
+	//dbNum       intDefaultMaxIdle
 	poollist    *redis.Pool
 }
 
 // SessionInit init redis session
-// savepath like redis server addr,pool size,password,dbnum,IdleTimeout second
-// e.g. 127.0.0.1:6379,100,astaxie,0,30
+// The savePath may be a fully qualified IANA address such
+// as: redis://user:secret@localhost:6379/0?foo=bar&qux=baz
 func (rp *Provider) SessionInit(maxlifetime int64, savePath string) error {
 	rp.maxlifetime = maxlifetime
-	configs := strings.Split(savePath, ",")
-	if len(configs) > 0 {
-		rp.savePath = configs[0]
-	}
-	if len(configs) > 1 {
-		poolsize, err := strconv.Atoi(configs[1])
-		if err != nil || poolsize < 0 {
-			rp.poolsize = MaxPoolSize
-		} else {
-			rp.poolsize = poolsize
-		}
+
+	var addr string
+	if savePath == "" {
+		addr = "redis://127.0.0.1:6379"
 	} else {
-		rp.poolsize = MaxPoolSize
-	}
-	if len(configs) > 2 {
-		rp.password = configs[2]
-	}
-	if len(configs) > 3 {
-		dbnum, err := strconv.Atoi(configs[3])
-		if err != nil || dbnum < 0 {
-			rp.dbNum = 0
-		} else {
-			rp.dbNum = dbnum
+		addr = savePath
+
+		if !strings.HasPrefix(addr, "redis://") {
+			addr = "redis://" + addr
 		}
-	} else {
-		rp.dbNum = 0
-	}
-	var idleTimeout time.Duration = 0
-	if len(configs) > 4 {
-		timeout, err := strconv.Atoi(configs[4])
-		if err == nil && timeout > 0 {
-			idleTimeout = time.Duration(timeout) * time.Second
-		}
-	}
-	rp.poollist = &redis.Pool{
-		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", rp.savePath)
-			if err != nil {
-				return nil, err
-			}
-			if rp.password != "" {
-				if _, err = c.Do("AUTH", rp.password); err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-			// some redis proxy such as twemproxy is not support select command
-			if rp.dbNum > 0 {
-				_, err = c.Do("SELECT", rp.dbNum)
-				if err != nil {
-					c.Close()
-					return nil, err
-				}
-			}
-			return c, err
-		},
-		MaxIdle: rp.poolsize,
 	}
 
-	rp.poollist.IdleTimeout = idleTimeout
+	rp.poollist = &redis.Pool{
+		MaxIdle:     5,
+		MaxActive:   0,
+		IdleTimeout: 2 * time.Minute,
+		Dial: func() (redis.Conn, error) {
+			return redis.DialURL(
+				addr,
+				redis.DialConnectTimeout(5 * time.Second),
+				redis.DialReadTimeout(time.Duration(0)),
+				redis.DialWriteTimeout(5 * time.Second),
+			)
+		},
+		TestOnBorrow: func(c redis.Conn, t time.Time) error {
+			_, err := c.Do("PING")
+			return err
+		},
+	}
 
 	return rp.poollist.Get().Err()
 }

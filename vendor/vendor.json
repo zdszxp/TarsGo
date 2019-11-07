@@ -231,6 +231,18 @@
 			"revisionTime": "2019-07-08T19:43:15Z"
 		},
 		{
+			"checksumSHA1": "FipL5MEgIYcapXYmgE08wcGKTJY=",
+			"path": "github.com/hashicorp/consul/sdk/testutil",
+			"revision": "3f3cd9a164c8113092b1173d79b106cfae1e02b1",
+			"revisionTime": "2019-07-08T19:43:15Z"
+		},
+		{
+			"checksumSHA1": "rT5exls73DmAJB2Rz8tJe/Lb//Q=",
+			"path": "github.com/hashicorp/consul/version",
+			"revision": "3f3cd9a164c8113092b1173d79b106cfae1e02b1",
+			"revisionTime": "2019-07-08T19:43:15Z"
+		},
+		{
 			"checksumSHA1": "ByRdQMv2yl16W6Tp9gUW1nNmpuI=",
 			"path": "github.com/hashicorp/errwrap",
 			"revision": "8a6fb523712970c966eefc6b39ed2c5e74880354",
@@ -667,6 +679,13 @@
 			"path": "github.com/mitchellh/go-homedir",
 			"revision": "af06845cf3004701891bf4fdb884bfe4920b3727",
 			"revisionTime": "2019-01-27T04:21:35Z"
+		},
+		{
+			"checksumSHA1": "2HevFlbGq53NhPSnj3vmSsz6Q2U=",
+			"origin": "github.com/hashicorp/consul/vendor/github.com/mitchellh/go-testing-interface",
+			"path": "github.com/mitchellh/go-testing-interface",
+			"revision": "3f3cd9a164c8113092b1173d79b106cfae1e02b1",
+			"revisionTime": "2019-07-08T19:43:15Z"
 		},
 		{
 			"checksumSHA1": "gOIe6F97Mcq/PwZjG38FkxervzE=",

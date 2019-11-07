@@ -27,7 +27,7 @@ var TLOG = rogger.GetLogger("TLOG")
 type TarsProtoCol interface {
 	Invoke(ctx context.Context, pkg []byte) []byte
 	ParsePackage(buff []byte) (int, int)
-	InvokeTimeout(pkg []byte) []byte
+	InvokeTimeout(ctx context.Context, pkg []byte) []byte
 }
 
 //ServerHandler  is interface with listen and handler method
@@ -124,7 +124,7 @@ func (ts *TarsServer) invoke(ctx context.Context, pkg []byte) []byte {
 		}()
 		select {
 		case <-rtimer.After(cfg.HandleTimeout):
-			rsp = ts.svr.InvokeTimeout(pkg)
+			rsp = ts.svr.InvokeTimeout(ctx, pkg)
 		case <-done:
 		}
 	}

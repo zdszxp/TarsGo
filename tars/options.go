@@ -14,6 +14,9 @@ import (
 	"github.com/TarsCloud/TarsGo/tars/data/store"
 	"github.com/TarsCloud/TarsGo/tars/data/store/memory"
 	redisStore "github.com/TarsCloud/TarsGo/tars/data/store/redis"
+
+	"github.com/TarsCloud/TarsGo/tars/api/session"
+	_ "github.com/TarsCloud/TarsGo/tars/api/session/redis" //must import
 )
 
 var tarsOpts *Options
@@ -90,6 +93,21 @@ func ConfigureWithConfigs(configs map[string]string) {
 
 	opts = append(opts, SyncOptions(&syncOpts))
 
+	sessionConfig := configs["session"]
+	if len(sessionConfig) > 0 {
+		if strings.HasPrefix(sessionConfig, "redis") {
+			rawurl := strings.TrimPrefix(sessionConfig, "redis"+"@")
+
+			sessionManager, err := session.NewManager("redis", rawurl)
+			if err != nil {
+				TLOG.Errorf("create session manager error: %v", err)
+				return
+			}
+
+			opts = append(opts, SessionManager(sessionManager))
+		}
+	}
+
 	configure(opts...)
 }
 
@@ -103,6 +121,7 @@ type Options struct {
 	sync.Options
 	broker broker.Broker
 	store  store.Store
+	sessionManager session.Manager
 
 	// Before and After funcs
 	BeforeStart []func() error
@@ -155,6 +174,16 @@ func (o *Options) Broker() broker.Broker {
 func Broker(b broker.Broker) Option {
 	return func(o *Options) {
 		o.broker = b
+	}
+}
+
+func (o *Options) SessionManager() session.Manager {
+	return o.sessionManager
+}
+
+func SessionManager(s session.Manager) Option {
+	return func(o *Options) {
+		o.sessionManager = s
 	}
 }
 
@@ -233,4 +262,13 @@ func GetLock() lock.Lock {
 	}
 
 	return opts.Lock()
+}
+
+func GetSessionManager() session.Manager {
+	opts := getOptions()
+	if opts == nil {
+		return nil
+	}
+
+	return opts.SessionManager()
 }

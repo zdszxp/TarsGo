@@ -8,12 +8,12 @@ export LANG     = en_US.UTF-8
 GO          = ${GOROOT}/bin/go
 
 #-------------------------------------------------------------------------------
+PROTOCOL_PATH := $(ROOT_PATH)/Proto/${APP}
 libpath=${subst :, ,$(GOPATH)}
 TARS2GO     := $(firstword $(subst :, , $(shell go env GOPATH)))/bin/tars2go
 J2GO_FLAG   := -outdir=vendor ${J2GO_FLAG} 
 PROTO2GO    := protoc
 PROTO_FLAG  := --go_out=plugins=tarsrpc:./vendor/${APP}
-
 #-------------------------------------------------------------------------------
 
 TARS_SRC    := $(wildcard *.tars)
@@ -41,10 +41,10 @@ ifneq ($(TARS_SRC),)
 TARSBUILD: $(TARS_SRC)
 	@$(TARS2GO) $(J2GO_FLAG) $(TARS_SRC)
 
-	@if [ ! -e $(GOPATH)/src/vendor/${APP} ]; then \
-		mkdir -p $(GOPATH)/src/vendor/${APP}; \
+	@if [ ! -e $(PROTOCOL_PATH) ]; then \
+		mkdir -p $(PROTOCOL_PATH); \
 	fi
-	@cd ./vendor/${APP}&&mv -f * $(GOPATH)/src/vendor/${APP}/;
+	@cd ./vendor/${APP}&&mv -f * $(PROTOCOL_PATH)/;
 else
 TARSBUILD:
 endif
@@ -57,11 +57,11 @@ PROTOBUILD: $(PROTO_SRC)
 	@for i in $(PROTO_SRC); do \
 		$(PROTO2GO) $(PROTO_FLAG) $$i;\
 	done;
-	@if [ ! -e "$(GOPATH)/src/vendor/${APP}" ]; then \
-		mkdir -p $(GOPATH)/src/vendor/${APP}; \
+	@if [ ! -e $(PROTOCOL_PATH) ]; then \
+		mkdir -p $(PROTOCOL_PATH); \
 	fi
 	
-	@cd ./vendor/${APP}&&mv -f * $(GOPATH)/src/vendor/${APP}/;
+	@cd ./vendor/${APP}&&mv -f * $(PROTOCOL_PATH)/;
 else
 PROTOBUILD:
 endif
